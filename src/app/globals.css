@@ -210,7 +210,7 @@ tbody tr:hover { background: #f8faff; }
   inset: 0;
   background: rgba(15,23,42,0.45);
   backdrop-filter: blur(4px);
-  z-index: 50;
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -422,6 +422,7 @@ tbody tr:hover { background: #f8faff; }
    ============================================================ */
 @media (max-width: 767px) {
   .modal-backdrop {
+    z-index: 2000; /* Much higher than nav */
     align-items: flex-end;
     padding: 0;
   }
@@ -430,6 +431,7 @@ tbody tr:hover { background: #f8faff; }
     max-width: 100%;
     max-height: 92dvh;
     padding: 1.25rem;
+    padding-bottom: calc(1.5rem + 30px); /* Extra space for safety */
     /* Bottom sheet drag handle */
     padding-top: 1.5rem;
   }
@@ -470,3 +472,67 @@ tbody tr:hover { background: #f8faff; }
 [data-theme="dark"] .tabs { border-bottom-color: #2d3149; }
 [data-theme="dark"] .modal { background: #1e2130; border-color: #2d3149; }
 
+/* ============================================================
+   MOBILE FAB (Floating Action Button)
+   ============================================================ */
+.fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 85px; /* Above BottomNav */
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  display: none; /* Desktop hidden */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(79,70,229,0.4);
+  z-index: 40;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(.175,.885,.32,1.275);
+}
+.fab:active { transform: scale(0.9); }
+
+.fab-menu {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-end;
+  z-index: 41;
+}
+.fab-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+  font-weight: 600;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  animation: fab-slide-up 0.2s ease-out forwards;
+}
+.fab-item svg { color: var(--accent-primary); }
+
+@keyframes fab-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 767px) {
+  .fab { display: flex; }
+}
+
+[data-theme="dark"] .fab-item {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-primary);
+}

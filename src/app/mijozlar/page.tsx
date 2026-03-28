@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Users, Search } from "lucide-react";
+import { Plus, X, Users, Search, UserPlus, ShoppingCart, Wallet } from "lucide-react";
+import MobileFab from "@/components/MobileFab";
+
 
 interface Customer {
   id: number;
@@ -98,7 +100,17 @@ export default function MijozlarPage() {
       {showPayment && (
         <AddPaymentModal customers={customers} onClose={() => setShowPayment(false)} onSuccess={() => { setShowPayment(false); loadAll(); }} />
       )}
+
+      {/* Mobile FAB */}
+      <MobileFab
+        items={[
+          { icon: <UserPlus size={20} />, label: "Yangi Mijoz", onClick: () => setShowAddCustomer(true) },
+          { icon: <ShoppingCart size={20} />, label: "Savdo Kiritish", onClick: () => setShowSell(true) },
+          { icon: <Wallet size={20} />, label: "Qarz To'lovi", onClick: () => setShowPayment(true) },
+        ]}
+      />
     </div>
+
   );
 }
 

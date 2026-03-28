@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Factory } from "lucide-react";
+import { Plus, X, Factory, PackagePlus } from "lucide-react";
+import MobileFab from "@/components/MobileFab";
+
 
 interface ProductionItem {
   size: number;
@@ -131,7 +133,15 @@ export default function IslabChiqarishPage() {
           onSuccess={() => { setShowAdd(false); loadAll(); }}
         />
       )}
+
+      {/* Mobile FAB */}
+      <MobileFab
+        items={[
+          { icon: <PackagePlus size={20} />, label: "Yangi Partiya", onClick: () => setShowAdd(true) },
+        ]}
+      />
     </div>
+
   );
 }
 

@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, ChevronDown, ChevronUp, Truck } from "lucide-react";
+import { Plus, X, ChevronDown, ChevronUp, Truck, Package, UserPlus, CreditCard } from "lucide-react";
+import MobileFab from "@/components/MobileFab";
+
 
 interface Supplier {
   id: number;
@@ -127,7 +129,17 @@ export default function OmborPage() {
           onSuccess={() => { setShowAddPayment(false); loadAll(); }}
         />
       )}
+
+      {/* Mobile FAB */}
+      <MobileFab
+        items={[
+          { icon: <Package size={20} />, label: "Seryo Kirimi", onClick: () => setShowAddMaterial(true) },
+          { icon: <UserPlus size={20} />, label: "Ta'minotchi", onClick: () => setShowAddSupplier(true) },
+          { icon: <CreditCard size={20} />, label: "To'lov", onClick: () => setShowAddPayment(true) },
+        ]}
+      />
     </div>
+
   );
 }
 

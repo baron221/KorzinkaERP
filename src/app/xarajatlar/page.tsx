@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Receipt } from "lucide-react";
+import { Plus, X, Receipt, Edit3 } from "lucide-react";
+import MobileFab from "@/components/MobileFab";
+
 
 interface Expense {
   id: number;
@@ -112,7 +114,15 @@ export default function XarajatlarPage() {
       {showAdd && (
         <AddExpenseModal onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); loadAll(); }} />
       )}
+
+      {/* Mobile FAB */}
+      <MobileFab
+        items={[
+          { icon: <Edit3 size={20} />, label: "Xarajat Qo'shish", onClick: () => setShowAdd(true) },
+        ]}
+      />
     </div>
+
   );
 }
 
