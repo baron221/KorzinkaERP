@@ -1,0 +1,163 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// MODULE 1: TA'MINOT VA OMBOR (Supply & Warehouse)
+// ============================================================
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  rawMaterials     RawMaterial[]
+  supplierPayments SupplierPayment[]
+}
+
+model RawMaterial {
+  id           Int      @id @default(autoincrement())
+  supplierId   Int
+  date         DateTime @default(now())
+  weightKg     Float    // amount received in kg
+  pricePerKg   Float    // price per kg
+  totalAmount  Float    // weightKg * pricePerKg
+  paidAmount   Float    @default(0) // amount paid to supplier
+  debtAmount   Float    @default(0) // totalAmount - paidAmount (auto-computed but stored)
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+  supplierPayments SupplierPayment[]
+}
+
+model SupplierPayment {
+  id            Int      @id @default(autoincrement())
+  supplierId    Int
+  rawMaterialId Int?     // optional: link to specific batch
+  amount        Float
+  date          DateTime @default(now())
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  supplier    Supplier     @relation(fields: [supplierId], references: [id])
+  rawMaterial RawMaterial? @relation(fields: [rawMaterialId], references: [id])
+}
+
+// ============================================================
+// MODULE 2: ISHLAB CHIQARISH (Production)
+// ============================================================
+model ProductionBatch {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @default(now())
+  rawUsedKg   Float    // raw material used in kg
+  totalBaskets Int     @default(0) // total baskets produced
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items ProductionItem[]
+}
+
+model ProductionItem {
+  id          Int    @id @default(autoincrement())
+  batchId     Int
+  size        Int    // 12, 14, or 16
+  count       Int    // number of baskets
+  weightGrams Float  // weight per basket in grams
+
+  batch ProductionBatch @relation(fields: [batchId], references: [id])
+}
+
+// ============================================================
+// MODULE 3: MIJOZLAR VA SAVDO (CRM / Sales)
+// ============================================================
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales            Sale[]
+  customerPayments CustomerPayment[]
+}
+
+model Sale {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  date        DateTime @default(now())
+  totalAmount Float    // total sale amount
+  paidAmount  Float    @default(0) // paid at time of sale
+  debtAmount  Float    @default(0) // totalAmount - paidAmount
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer  Customer   @relation(fields: [customerId], references: [id])
+  items     SaleItem[]
+  payments  CustomerPayment[]
+}
+
+model SaleItem {
+  id        Int   @id @default(autoincrement())
+  saleId    Int
+  size      Int   // 12, 14, or 16
+  count     Int
+  unitPrice Float // price per basket for this customer/sale
+  subtotal  Float // count * unitPrice
+
+  sale Sale @relation(fields: [saleId], references: [id])
+}
+
+model CustomerPayment {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  saleId     Int?     // optional: link to specific sale
+  amount     Float
+  date       DateTime @default(now())
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  sale     Sale?    @relation(fields: [saleId], references: [id])
+}
+
+// ============================================================
+// MODULE 4: XARAJATLAR (Expenses)
+// ============================================================
+model Expense {
+  id        Int          @id @default(autoincrement())
+  date      DateTime     @default(now())
+  category  String       // ELECTRICITY | WAGES | FOOD | MISC
+  amount    Float
+  notes     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+// ============================================================
+// STOCK SNAPSHOT (for quick reads)
+// ============================================================
+model StockSnapshot {
+  id          Int      @id @default(autoincrement())
+  rawStockKg  Float    @default(0)  // current raw material in kg
+  size12Count Int      @default(0)  // finished baskets by size
+  size14Count Int      @default(0)
+  size16Count Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
