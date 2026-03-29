@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Factory, PackagePlus } from "lucide-react";
+import { Plus, X, Factory, PackagePlus, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
+import { fmtAmount, fmtWeight } from "@/lib/utils";
+
+
 
 
 interface ProductionItem {
@@ -24,8 +27,6 @@ interface Stock {
   size16Count: number;
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("uz-UZ").format(Math.round(n));
 
 export default function IslabChiqarishPage() {
   const [batches, setBatches] = useState<ProductionBatch[]>([]);
@@ -42,6 +43,18 @@ export default function IslabChiqarishPage() {
     setStock(dash.stock);
     setLoading(false);
   }, []);
+
+  const handleDelete = async (type: string, id: number) => {
+    if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
+    try {
+      const res = await fetch(`/api/delete?type=${type}&id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      else loadAll();
+    } catch (e) {
+      alert("Xatolik yuz berdi");
+    }
+  };
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -62,23 +75,23 @@ export default function IslabChiqarishPage() {
         <div className="grid-4" style={{ marginBottom: "1.5rem" }}>
           <div className="stat-card" style={{ borderLeft: "3px solid #6366f1" }}>
             <div className="stat-label">🌾 Xomashyo (Seryo)</div>
-            <div className="stat-value">{stock.rawStockKg.toFixed(1)}</div>
-            <div className="stat-sub">kg omborda</div>
+            <div className="stat-value">{fmtWeight(stock.rawStockKg)}</div>
+            <div className="stat-sub">omborda</div>
           </div>
           <div className="stat-card" style={{ borderLeft: "3px solid #10b981" }}>
             <div className="stat-label">🧺 Razmer 12</div>
-            <div className="stat-value">{fmt(stock.size12Count)}</div>
-            <div className="stat-sub">ta tayyor</div>
+            <div className="stat-value">{stock.size12Count} ta</div>
+            <div className="stat-sub">tayyor</div>
           </div>
           <div className="stat-card" style={{ borderLeft: "3px solid #f59e0b" }}>
             <div className="stat-label">🧺 Razmer 14</div>
-            <div className="stat-value">{fmt(stock.size14Count)}</div>
-            <div className="stat-sub">ta tayyor</div>
+            <div className="stat-value">{stock.size14Count} ta</div>
+            <div className="stat-sub">tayyor</div>
           </div>
           <div className="stat-card" style={{ borderLeft: "3px solid #ef4444" }}>
             <div className="stat-label">🧺 Razmer 16</div>
-            <div className="stat-value">{fmt(stock.size16Count)}</div>
-            <div className="stat-sub">ta tayyor</div>
+            <div className="stat-value">{stock.size16Count} ta</div>
+            <div className="stat-sub">tayyor</div>
           </div>
         </div>
       )}
@@ -112,7 +125,7 @@ export default function IslabChiqarishPage() {
                 return (
                   <tr key={b.id}>
                     <td className="text-muted">{new Date(b.date).toLocaleDateString("uz-UZ")}</td>
-                    <td style={{ fontWeight: 600 }}>{b.rawUsedKg.toFixed(2)} kg</td>
+                    <td style={{ fontWeight: 600 }}>{fmtWeight(b.rawUsedKg)}</td>
                     <td style={{ fontWeight: 700, color: "var(--accent-primary)" }}>{b.totalBaskets} ta</td>
                     <td>{s12 > 0 ? <span className="badge badge-blue">{s12}</span> : "—"}</td>
                     <td>{s14 > 0 ? <span className="badge badge-blue">{s14}</span> : "—"}</td>
@@ -193,8 +206,8 @@ function AddProductionModal({
         </div>
         {error && <div className="alert alert-danger" style={{ marginBottom: "1rem" }}>{error}</div>}
         <div className="alert alert-warning" style={{ marginBottom: "1rem" }}>
-          Mavjud seryo: <strong>{currentStock.toFixed(1)} kg</strong>
-          {totalKg > 0 && <> | Sarflanadi: <strong>{totalKg.toFixed(2)} kg</strong></>}
+          Mavjud seryo: <strong>{fmtWeight(currentStock)}</strong>
+          {totalKg > 0 && <> | Sarflanadi: <strong>{fmtWeight(totalKg)}</strong></>}
         </div>
         <div className="grid-2">
           <div className="form-group"><label>Sana</label><input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} /></div>
@@ -214,7 +227,10 @@ function AddProductionModal({
                 <option value={16}>Razmer 16</option>
               </select>
               <input type="number" className="input" placeholder="Soni (ta)" value={item.count || ""} onChange={(e) => updateItem(i, "count", e.target.value)} />
-              <input type="number" className="input" placeholder="Og'irligi (g)" value={item.weightGrams || ""} onChange={(e) => updateItem(i, "weightGrams", e.target.value)} />
+              <div>
+                <input type="number" className="input" placeholder="Og'irligi (g)" value={item.weightGrams || ""} onChange={(e) => updateItem(i, "weightGrams", e.target.value)} />
+                {item.weightGrams > 0 && <div style={{ fontSize: "0.65rem", color: "var(--accent-primary)" }}>{(item.weightGrams / 1000).toFixed(3)} kg</div>}
+              </div>
               <button className="btn btn-danger btn-sm" onClick={() => removeItem(i)} style={{ padding: "0.35rem" }}><X size={12} /></button>
             </div>
           ))}
@@ -222,7 +238,7 @@ function AddProductionModal({
 
         {totalBaskets > 0 && (
           <div className="alert alert-success" style={{ marginBottom: "1rem" }}>
-            Jami: <strong>{totalBaskets} ta korzinka</strong> | Sarflanadi: <strong>{totalKg.toFixed(2)} kg</strong>
+            Jami: <strong>{totalBaskets} ta korzinka</strong> | Sarflanadi: <strong>{fmtWeight(totalKg)}</strong>
           </div>
         )}
         <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>

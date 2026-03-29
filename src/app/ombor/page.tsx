@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, ChevronDown, ChevronUp, Truck, Package, UserPlus, CreditCard } from "lucide-react";
+import { Plus, X, ChevronDown, ChevronUp, Truck, Package, UserPlus, CreditCard, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
+import { fmtAmount, fmtWeight } from "@/lib/utils";
+
+
 
 
 interface Supplier {
@@ -32,8 +35,6 @@ interface SupplierPayment {
   supplier: Supplier;
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("uz-UZ").format(Math.round(n)) + " so'm";
 
 type Tab = "materials" | "suppliers" | "payments";
 
@@ -60,7 +61,17 @@ export default function OmborPage() {
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
-
+  const handleDelete = async (type: string, id: number) => {
+    if (!confirm("O'chirishni tasdiqlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.")) return;
+    try {
+      const res = await fetch(`/api/delete?type=${type}&id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      else loadAll();
+    } catch (e) {
+      alert("Xatolik yuz berdi");
+    }
+  };
   return (
     <div>
       <div className="page-header">
@@ -170,16 +181,21 @@ function MaterialsTable({ materials }: { materials: RawMaterial[] }) {
             <tr key={m.id}>
               <td className="text-muted">{new Date(m.date).toLocaleDateString("uz-UZ")}</td>
               <td style={{ fontWeight: 500 }}>{m.supplier.name}</td>
-              <td style={{ fontWeight: 600 }}>{m.weightKg} kg</td>
-              <td>{fmt(m.pricePerKg)}</td>
-              <td style={{ fontWeight: 700 }}>{fmt(m.totalAmount)}</td>
-              <td className="text-green">{fmt(m.paidAmount)}</td>
+              <td style={{ fontWeight: 600 }}>{fmtWeight(m.weightKg)}</td>
+              <td>{fmtAmount(m.pricePerKg)}</td>
+              <td style={{ fontWeight: 700 }}>{fmtAmount(m.totalAmount)}</td>
+              <td className="text-green">{fmtAmount(m.paidAmount)}</td>
               <td>
                 {m.debtAmount > 0 ? (
-                  <span className="badge badge-red">{fmt(m.debtAmount)}</span>
+                  <span className="badge badge-red">{fmtAmount(m.debtAmount)}</span>
                 ) : (
                   <span className="badge badge-green">To'liq</span>
                 )}
+              </td>
+              <td>
+                <button className="btn btn-sm" onClick={() => handleDelete("raw", m.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                  <Trash2 size={16} />
+                </button>
               </td>
             </tr>
           ))}
@@ -213,12 +229,12 @@ function SuppliersTable({ suppliers, materials }: { suppliers: Supplier[]; mater
               <div>
                 <div style={{ fontWeight: 600 }}>{s.name}</div>
                 <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-                  {s.phone ?? "—"} · {sm.length} ta kirimi · Jami: {fmt(totalPurchase)}
+                  {s.phone ?? "—"} · {sm.length} ta kirimi · Jami: {fmtAmount(totalPurchase)}
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                 {totalDebt > 0 ? (
-                  <span className="badge badge-red">Qarz: {fmt(totalDebt)}</span>
+                  <span className="badge badge-red">Qarz: {fmtAmount(totalDebt)}</span>
                 ) : (
                   <span className="badge badge-green">Hisob-kitob to'liq</span>
                 )}
@@ -240,11 +256,16 @@ function SuppliersTable({ suppliers, materials }: { suppliers: Supplier[]; mater
                   <tbody>
                     {sm.map((m) => (
                       <tr key={m.id}>
-                        <td>{new Date(m.date).toLocaleDateString("uz-UZ")}</td>
-                        <td>{m.weightKg} kg</td>
-                        <td>{fmt(m.totalAmount)}</td>
-                        <td className="text-green">{fmt(m.paidAmount)}</td>
-                        <td>{m.debtAmount > 0 ? <span className="badge badge-red">{fmt(m.debtAmount)}</span> : <span className="badge badge-green">✓</span>}</td>
+                         <td>{new Date(m.date).toLocaleDateString("uz-UZ")}</td>
+                        <td>{fmtWeight(m.weightKg)}</td>
+                        <td>{fmtAmount(m.totalAmount)}</td>
+                        <td className="text-green">{fmtAmount(m.paidAmount)}</td>
+                        <td>{m.debtAmount > 0 ? <span className="badge badge-red">{fmtAmount(m.debtAmount)}</span> : <span className="badge badge-green">✓</span>}</td>
+                        <td>
+                          <button className="btn btn-sm" onClick={() => handleDelete("raw", m.id)} style={{ color: "var(--accent-red)", padding: "0.2rem" }}>
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -281,8 +302,13 @@ function PaymentsTable({ payments }: { payments: SupplierPayment[] }) {
             <tr key={p.id}>
               <td className="text-muted">{new Date(p.date).toLocaleDateString("uz-UZ")}</td>
               <td style={{ fontWeight: 500 }}>{p.supplier.name}</td>
-              <td className="text-green" style={{ fontWeight: 700 }}>{fmt(p.amount)}</td>
+              <td className="text-green" style={{ fontWeight: 700 }}>{fmtAmount(p.amount)}</td>
               <td className="text-muted">{p.notes ?? "—"}</td>
+              <td>
+                <button className="btn btn-sm" onClick={() => handleDelete("expense", p.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                  <Trash2 size={16} />
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -356,15 +382,27 @@ function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Suppli
           <div className="form-group"><label>Sana</label><input type="date" className="input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>
         </div>
         <div className="grid-2">
-          <div className="form-group"><label>Og'irlik (kg) *</label><input type="number" className="input" value={form.weightKg} onChange={(e) => setForm({ ...form, weightKg: e.target.value })} placeholder="1000" /></div>
-          <div className="form-group"><label>1 kg narxi (so'm) *</label><input type="number" className="input" value={form.pricePerKg} onChange={(e) => setForm({ ...form, pricePerKg: e.target.value })} placeholder="5000" /></div>
+          <div className="form-group">
+            <label>Og'irlik (kg) *</label>
+            <input type="number" className="input" value={form.weightKg} onChange={(e) => setForm({ ...form, weightKg: e.target.value })} placeholder="1000" />
+            {form.weightKg && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtWeight(parseFloat(form.weightKg))}</div>}
+          </div>
+          <div className="form-group">
+            <label>1 kg narxi (so'm) *</label>
+            <input type="number" className="input" value={form.pricePerKg} onChange={(e) => setForm({ ...form, pricePerKg: e.target.value })} placeholder="5000" />
+            {form.pricePerKg && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(form.pricePerKg))}</div>}
+          </div>
         </div>
         {total > 0 && (
           <div className="alert alert-warning" style={{ marginBottom: "1rem" }}>
-            Jami summa: <strong>{fmt(total)}</strong>{debt > 0 && <> | Qarz: <strong className="text-red">{fmt(debt)}</strong></>}
+            Jami summa: <strong>{fmtAmount(total)}</strong>{debt > 0 && <> | Qarz: <strong className="text-red">{fmtAmount(debt)}</strong></>}
           </div>
         )}
-        <div className="form-group"><label>To'langan summa (so'm)</label><input type="number" className="input" value={form.paidAmount} onChange={(e) => setForm({ ...form, paidAmount: e.target.value })} placeholder="0" /></div>
+        <div className="form-group">
+          <label>To'langan summa (so'm)</label>
+          <input type="number" className="input" value={form.paidAmount} onChange={(e) => setForm({ ...form, paidAmount: e.target.value })} placeholder="0" />
+          {form.paidAmount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(form.paidAmount))}</div>}
+        </div>
         <div className="form-group"><label>Izoh</label><input className="input" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Ixtiyoriy" /></div>
         <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
           <button className="btn btn-secondary btn-sm" onClick={onClose}>Bekor</button>
@@ -406,12 +444,16 @@ function AddPaymentModal({ suppliers, materials, onClose, onSuccess }: { supplie
             <label>Qaysi kirimi uchun (ixtiyoriy)</label>
             <select className="input" value={form.rawMaterialId} onChange={(e) => setForm({ ...form, rawMaterialId: e.target.value })}>
               <option value="">Umumiy to'lov</option>
-              {filteredMaterials.map((m) => <option key={m.id} value={m.id}>{new Date(m.date).toLocaleDateString("uz-UZ")} — Qarz: {fmt(m.debtAmount)}</option>)}
+              {filteredMaterials.map((m) => <option key={m.id} value={m.id}>{new Date(m.date).toLocaleDateString("uz-UZ")} — Qarz: {fmtAmount(m.debtAmount)}</option>)}
             </select>
           </div>
         )}
         <div className="grid-2">
-          <div className="form-group"><label>Summa (so'm) *</label><input type="number" className="input" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="500000" /></div>
+          <div className="form-group">
+            <label>Summa (so'm) *</label>
+            <input type="number" className="input" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="500000" />
+            {form.amount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(form.amount))}</div>}
+          </div>
           <div className="form-group"><label>Sana</label><input type="date" className="input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>
         </div>
         <div className="form-group"><label>Izoh</label><input className="input" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Ixtiyoriy" /></div>

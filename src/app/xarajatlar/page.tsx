@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Receipt, Edit3 } from "lucide-react";
+import { Plus, X, Receipt, Edit3, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
+import { fmtAmount } from "@/lib/utils";
+
+
 
 
 interface Expense {
@@ -19,8 +22,6 @@ const CATEGORIES: Record<string, { label: string; emoji: string; color: string }
   MISC: { label: "Mayda xarajatlar", emoji: "📎", color: "#94a3b8" },
 };
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("uz-UZ").format(Math.round(n)) + " so'm";
 
 export default function XarajatlarPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -38,6 +39,18 @@ export default function XarajatlarPage() {
     setByCategory(data.byCategory);
     setLoading(false);
   }, [month]);
+
+  const handleDelete = async (type: string, id: number) => {
+    if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
+    try {
+      const res = await fetch(`/api/delete?type=${type}&id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      else loadAll();
+    } catch (e) {
+      alert("Xatolik yuz berdi");
+    }
+  };
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -61,7 +74,7 @@ export default function XarajatlarPage() {
         {Object.entries(CATEGORIES).map(([cat, meta]) => (
           <div key={cat} className="stat-card" style={{ borderLeft: `3px solid ${meta.color}` }}>
             <div className="stat-label">{meta.emoji} {meta.label}</div>
-            <div className="stat-value" style={{ fontSize: "1.1rem" }}>{fmt(byCategory[cat] ?? 0)}</div>
+            <div className="stat-value" style={{ fontSize: "1.1rem" }}>{fmtAmount(byCategory[cat] ?? 0)}</div>
           </div>
         ))}
       </div>
@@ -70,7 +83,7 @@ export default function XarajatlarPage() {
       <div className="card" style={{ marginBottom: "1.5rem", borderLeft: "3px solid #ef4444", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Jami Xarajat ({month})</div>
-          <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--accent-red)" }}>{fmt(total)}</div>
+          <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--accent-red)" }}>{fmtAmount(total)}</div>
         </div>
         <Receipt size={32} style={{ color: "var(--accent-red)", opacity: 0.4 }} />
       </div>
@@ -101,8 +114,13 @@ export default function XarajatlarPage() {
                         {meta?.emoji} {meta?.label ?? e.category}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 700, color: "var(--accent-red)" }}>{fmt(e.amount)}</td>
+                    <td style={{ fontWeight: 700, color: "var(--accent-red)" }}>{fmtAmount(e.amount)}</td>
                     <td className="text-muted">{e.notes ?? "—"}</td>
+                    <td>
+                      <button className="btn btn-sm" onClick={() => handleDelete("expense", e.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -153,7 +171,11 @@ function AddExpenseModal({ onClose, onSuccess }: { onClose: () => void; onSucces
           </select>
         </div>
         <div className="grid-2">
-          <div className="form-group"><label>Summa (so'm) *</label><input type="number" className="input" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="500000" /></div>
+          <div className="form-group">
+            <label>Summa (so'm) *</label>
+            <input type="number" className="input" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="500000" />
+            {form.amount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(form.amount))}</div>}
+          </div>
           <div className="form-group"><label>Sana</label><input type="date" className="input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>
         </div>
         <div className="form-group"><label>Izoh</label><input className="input" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Ixtiyoriy" /></div>

@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Users, Search, UserPlus, ShoppingCart, Wallet } from "lucide-react";
+import { Plus, X, Users, Search, UserPlus, ShoppingCart, Wallet, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
+import { fmtAmount } from "@/lib/utils";
+
+
 
 
 interface Customer {
@@ -17,8 +20,6 @@ interface Stock {
   size16Count: number;
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("uz-UZ").format(Math.round(n)) + " so'm";
 
 type Tab = "list" | "sell" | "debt";
 
@@ -44,9 +45,22 @@ export default function MijozlarPage() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  const filtered = customers.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.phone ?? "").includes(search)
+  const handleDelete = async (type: string, id: number) => {
+    if (!confirm("O'chirishni tasdiqlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.")) return;
+    try {
+      const res = await fetch(`/api/delete?type=${type}&id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      else loadAll();
+    } catch (e) {
+      alert("Xatolik yuz berdi");
+    }
+  };
+
+  const filtered = customers.filter(
+    (c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.phone ?? "").includes(search)
   );
 
   const debtCustomers = customers.filter((c) =>
@@ -84,9 +98,9 @@ export default function MijozlarPage() {
       {loading ? (
         <div style={{ color: "var(--text-secondary)", textAlign: "center", padding: "2rem" }}>Yuklanmoqda...</div>
       ) : tab === "list" ? (
-        <CustomerList customers={filtered} search={search} setSearch={setSearch} />
+        <CustomerList customers={filtered} search={search} setSearch={setSearch} onDelete={handleDelete} />
       ) : tab === "sell" ? (
-        <SalesList />
+        <SalesList onDelete={handleDelete} />
       ) : (
         <DebtList customers={debtCustomers} />
       )}
@@ -114,7 +128,7 @@ export default function MijozlarPage() {
   );
 }
 
-function CustomerList({ customers, search, setSearch }: { customers: Customer[]; search: string; setSearch: (s: string) => void }) {
+function CustomerList({ customers, search, setSearch, onDelete }: { customers: Customer[]; search: string; setSearch: (s: string) => void; onDelete: (type: string, id: number) => void }) {
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
@@ -146,8 +160,13 @@ function CustomerList({ customers, search, setSearch }: { customers: Customer[];
                     <td style={{ fontWeight: 600 }}>{c.name}</td>
                     <td className="text-muted">{c.phone ?? "—"}</td>
                     <td>{c.sales.length} ta</td>
-                    <td>{fmt(totalBuy)}</td>
-                    <td>{totalDebt > 0 ? <span className="badge badge-red">{fmt(totalDebt)}</span> : <span className="badge badge-green">✓</span>}</td>
+                    <td>{fmtAmount(totalBuy)}</td>
+                    <td>{totalDebt > 0 ? <span className="badge badge-red">{fmtAmount(totalDebt)}</span> : <span className="badge badge-green">✓</span>}</td>
+                    <td>
+                      <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); onDelete("customer", c.id); }} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -159,7 +178,7 @@ function CustomerList({ customers, search, setSearch }: { customers: Customer[];
   );
 }
 
-function SalesList() {
+function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void }) {
   const [sales, setSales] = useState<Array<{
     id: number; date: string; totalAmount: number; paidAmount: number; debtAmount: number;
     customer: { name: string };
@@ -199,9 +218,14 @@ function SalesList() {
                   </span>
                 ))}
               </td>
-              <td style={{ fontWeight: 700 }}>{fmt(s.totalAmount)}</td>
-              <td className="text-green">{fmt(s.paidAmount)}</td>
-              <td>{s.debtAmount > 0 ? <span className="badge badge-red">{fmt(s.debtAmount)}</span> : <span className="badge badge-green">✓</span>}</td>
+              <td style={{ fontWeight: 700 }}>{fmtAmount(s.totalAmount)}</td>
+              <td className="text-green">{fmtAmount(s.paidAmount)}</td>
+              <td>{s.debtAmount > 0 ? <span className="badge badge-red">{fmtAmount(s.debtAmount)}</span> : <span className="badge badge-green">✓</span>}</td>
+              <td>
+                <button className="btn btn-sm" onClick={() => onDelete("sale", s.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                  <Trash2 size={16} />
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -223,7 +247,7 @@ function DebtList({ customers }: { customers: Customer[] }) {
               <tr key={c.id}>
                 <td style={{ fontWeight: 600 }}>{c.name}</td>
                 <td className="text-muted">{c.phone ?? "—"}</td>
-                <td><span className="badge badge-red" style={{ fontSize: "0.85rem", padding: "0.3rem 0.7rem" }}>{fmt(debt)}</span></td>
+                <td><span className="badge badge-red" style={{ fontSize: "0.85rem", padding: "0.3rem 0.7rem" }}>{fmtAmount(debt)}</span></td>
               </tr>
             );
           })}
@@ -342,7 +366,10 @@ function AddSaleModal({ customers, stock, onClose, onSuccess }: {
                 <option value={16}>Razmer 16</option>
               </select>
               <input type="number" className="input" placeholder="0" value={item.count || ""} onChange={(e) => updateItem(i, "count", e.target.value)} />
-              <input type="number" className="input" placeholder="Narx" value={item.unitPrice || ""} onChange={(e) => updateItem(i, "unitPrice", e.target.value)} />
+              <div style={{ position: "relative" }}>
+                <input type="number" className="input" placeholder="Narx" value={item.unitPrice || ""} onChange={(e) => updateItem(i, "unitPrice", e.target.value)} />
+                {item.unitPrice > 0 && <div style={{ fontSize: "0.65rem", color: "var(--accent-primary)", marginTop: "2px" }}>{fmtAmount(item.unitPrice)}</div>}
+              </div>
               <button className="btn btn-danger btn-sm" onClick={() => removeItem(i)} style={{ padding: "0.35rem" }}><X size={12} /></button>
             </div>
           ))}
@@ -350,13 +377,17 @@ function AddSaleModal({ customers, stock, onClose, onSuccess }: {
 
         {totalAmount > 0 && (
           <div className="alert alert-success" style={{ marginBottom: "1rem" }}>
-            Jami: <strong>{fmt(totalAmount)}</strong>
-            {debt > 0 && <> | Qarz qoladi: <strong style={{ color: "var(--accent-red)" }}>{fmt(debt)}</strong></>}
+            Jami: <strong>{fmtAmount(totalAmount)}</strong>
+            {debt > 0 && <> | Qarz qoladi: <strong style={{ color: "var(--accent-red)" }}>{fmtAmount(debt)}</strong></>}
           </div>
         )}
 
         <div className="grid-2">
-          <div className="form-group"><label>To'langan summa</label><input type="number" className="input" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} /></div>
+          <div className="form-group">
+            <label>To'langan summa</label>
+            <input type="number" className="input" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} />
+            {paidAmount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(paidAmount))}</div>}
+          </div>
           <div className="form-group"><label>Izoh</label><input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
         </div>
 
@@ -419,12 +450,16 @@ function AddPaymentModal({ customers, onClose, onSuccess }: {
             <label>Qaysi savdo uchun (ixtiyoriy)</label>
             <select className="input" value={saleId} onChange={(e) => setSaleId(e.target.value)}>
               <option value="">Umumiy to'lov</option>
-              {sales.map((s) => <option key={s.id} value={s.id}>{new Date(s.date).toLocaleDateString("uz-UZ")} — Qarz: {fmt(s.debtAmount)}</option>)}
+              {sales.map((s) => <option key={s.id} value={s.id}>{new Date(s.date).toLocaleDateString("uz-UZ")} — Qarz: {fmtAmount(s.debtAmount)}</option>)}
             </select>
           </div>
         )}
         <div className="grid-2">
-          <div className="form-group"><label>Summa (so'm) *</label><input type="number" className="input" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="1000000" /></div>
+          <div className="form-group">
+            <label>Summa (so'm) *</label>
+            <input type="number" className="input" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="1000000" />
+            {amount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(amount))}</div>}
+          </div>
           <div className="form-group"><label>Sana</label><input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} /></div>
         </div>
         <div className="form-group"><label>Izoh</label><input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
