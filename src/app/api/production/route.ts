@@ -29,11 +29,14 @@ export async function POST(req: NextRequest) {
     0
   );
 
-  // Check stock
-  const snapshot = await prisma.stockSnapshot.findFirst();
-  if (!snapshot || snapshot.rawStockKg < rawUsedKg) {
+  // Check stock (Dynamic)
+  const rawReceived = await prisma.rawMaterial.aggregate({ _sum: { weightKg: true } });
+  const rawUsedPrev = await prisma.productionBatch.aggregate({ _sum: { rawUsedKg: true } });
+  const currentRawStock = (rawReceived._sum.weightKg ?? 0) - (rawUsedPrev._sum.rawUsedKg ?? 0);
+
+  if (currentRawStock < rawUsedKg) {
     return NextResponse.json(
-      { error: `Omborda yetarli seryo yo'q. Mavjud: ${snapshot?.rawStockKg ?? 0} kg, kerak: ${rawUsedKg.toFixed(2)} kg` },
+      { error: `Omborda yetarli seryo yo'q. Mavjud: ${currentRawStock.toFixed(2)} kg, kerak: ${rawUsedKg.toFixed(2)} kg` },
       { status: 400 }
     );
   }
@@ -56,20 +59,7 @@ export async function POST(req: NextRequest) {
     include: { items: true },
   });
 
-  // Deduct raw stock and update finished basket counts
-  const size12Used = items.filter((i: { size: number }) => i.size === 12).reduce((s: number, i: { count: number }) => s + i.count, 0);
-  const size14Used = items.filter((i: { size: number }) => i.size === 14).reduce((s: number, i: { count: number }) => s + i.count, 0);
-  const size16Used = items.filter((i: { size: number }) => i.size === 16).reduce((s: number, i: { count: number }) => s + i.count, 0);
-
-  await prisma.stockSnapshot.update({
-    where: { id: snapshot.id },
-    data: {
-      rawStockKg: { decrement: rawUsedKg },
-      size12Count: { increment: size12Used },
-      size14Count: { increment: size14Used },
-      size16Count: { increment: size16Used },
-    },
-  });
+  return NextResponse.json(batch, { status: 201 });
 
   return NextResponse.json(batch, { status: 201 });
 }

@@ -37,23 +37,24 @@ export async function POST(req: NextRequest) {
     const paid = parseFloat(paidAmount ?? 0);
     const debt = totalAmount - paid;
 
-    // Deduct finished basket stock
-    const snapshot = await prisma.stockSnapshot.findFirst();
-    if (snapshot) {
-      const updates: Record<string, { decrement: number }> = {};
-      for (const item of items) {
-        const field =
-          item.size === 12
-            ? "size12Count"
-            : item.size === 14
-            ? "size14Count"
-            : "size16Count";
-        updates[field] = { decrement: item.count };
-      }
-      await prisma.stockSnapshot.update({
-        where: { id: snapshot.id },
-        data: updates,
+    // Check finished basket stock (Dynamic)
+    for (const item of items) {
+      const produced = await prisma.productionItem.aggregate({
+        where: { size: item.size },
+        _sum: { count: true }
       });
+      const sold = await prisma.saleItem.aggregate({
+        where: { size: item.size },
+        _sum: { count: true }
+      });
+      const currentStock = (produced._sum.count ?? 0) - (sold._sum.count ?? 0);
+      
+      if (currentStock < item.count) {
+        return NextResponse.json(
+          { error: `Omborda yetarli R${item.size} savat yo'q. Mavjud: ${currentStock} ta` },
+          { status: 400 }
+        );
+      }
     }
 
     const sale = await prisma.sale.create({

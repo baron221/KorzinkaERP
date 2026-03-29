@@ -6,27 +6,44 @@ import { prisma } from "@/lib/prisma";
 // ============================================================
 export async function GET() {
   try {
-    // Stock snapshot (upsert the single row)
-    let snapshot = await prisma.stockSnapshot.findFirst();
-    if (!snapshot) {
-      snapshot = await prisma.stockSnapshot.create({
-        data: { rawStockKg: 0, size12Count: 0, size14Count: 0, size16Count: 0 },
-      });
-    }
+    // 1. Dynamic Raw Stock: Received - Used
+    const rawReceived = await prisma.rawMaterial.aggregate({ _sum: { weightKg: true } });
+    const rawUsed = await prisma.productionBatch.aggregate({ _sum: { rawUsedKg: true } });
+    const currentRawStock = (rawReceived._sum.weightKg ?? 0) - (rawUsed._sum.rawUsedKg ?? 0);
 
-    // Total raw material received
-    const rawAgg = await prisma.rawMaterial.aggregate({
-      _sum: { weightKg: true, totalAmount: true, paidAmount: true },
+    // 2. Dynamic Basket Stock: Produced - Sold
+    const producedItems = await prisma.productionItem.groupBy({
+      by: ["size"],
+      _sum: { count: true },
     });
-    const supplierDebt =
-      (rawAgg._sum.totalAmount ?? 0) - (rawAgg._sum.paidAmount ?? 0);
+    const soldItems = await prisma.saleItem.groupBy({
+      by: ["size"],
+      _sum: { count: true },
+    });
 
-    // Sales stats
+    const getStock = (size: number) => {
+      const p = producedItems.find(i => i.size === size)?._sum.count ?? 0;
+      const s = soldItems.find(i => i.size === size)?._sum.count ?? 0;
+      return p - s;
+    };
+
+    const dynamicStock = {
+      rawStockKg: currentRawStock,
+      size12Count: getStock(12),
+      size14Count: getStock(14),
+      size16Count: getStock(16),
+    };
+
+    // Other aggregations
+    const rawAgg = await prisma.rawMaterial.aggregate({
+      _sum: { totalAmount: true, paidAmount: true },
+    });
+    const supplierDebt = (rawAgg._sum.totalAmount ?? 0) - (rawAgg._sum.paidAmount ?? 0);
+
     const saleAgg = await prisma.sale.aggregate({
       _sum: { totalAmount: true, paidAmount: true, debtAmount: true },
     });
 
-    // Expenses current month
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const expenseAgg = await prisma.expense.aggregate({
@@ -34,26 +51,21 @@ export async function GET() {
       _sum: { amount: true },
     });
 
-    // Recent sales (last 5)
     const recentSales = await prisma.sale.findMany({
       take: 5,
       orderBy: { date: "desc" },
       include: { customer: true },
     });
 
-    // Customer count
-    const customerCount = await prisma.customer.count();
-    const supplierCount = await prisma.supplier.count();
-
     return NextResponse.json({
-      stock: snapshot,
+      stock: dynamicStock,
       supplierDebt,
       totalRevenue: saleAgg._sum.totalAmount ?? 0,
       totalPaid: saleAgg._sum.paidAmount ?? 0,
       customerDebt: saleAgg._sum.debtAmount ?? 0,
       monthlyExpenses: expenseAgg._sum.amount ?? 0,
-      customerCount,
-      supplierCount,
+      customerCount: await prisma.customer.count(),
+      supplierCount: await prisma.supplier.count(),
       recentSales,
     });
   } catch (e) {

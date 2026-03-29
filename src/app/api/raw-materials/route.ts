@@ -42,12 +42,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Update stock snapshot
-    await prisma.stockSnapshot.upsert({
-      where: { id: 1 },
-      create: { id: 1, rawStockKg: parseFloat(weightKg) },
-      update: { rawStockKg: { increment: parseFloat(weightKg) } },
-    });
+    return NextResponse.json(material, { status: 201 });
 
     return NextResponse.json(material, { status: 201 });
   } catch (error) {
