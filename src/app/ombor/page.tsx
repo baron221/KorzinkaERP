@@ -109,11 +109,11 @@ export default function OmborPage() {
           Yuklanmoqda...
         </div>
       ) : tab === "materials" ? (
-        <MaterialsTable materials={materials} />
+        <MaterialsTable materials={materials} onDelete={handleDelete} />
       ) : tab === "suppliers" ? (
-        <SuppliersTable suppliers={suppliers} materials={materials} />
+        <SuppliersTable suppliers={suppliers} materials={materials} onDelete={handleDelete} />
       ) : (
-        <PaymentsTable payments={payments} />
+        <PaymentsTable payments={payments} onDelete={handleDelete} />
       )}
 
       {/* Add Supplier Modal */}
@@ -154,7 +154,7 @@ export default function OmborPage() {
   );
 }
 
-function MaterialsTable({ materials }: { materials: RawMaterial[] }) {
+function MaterialsTable({ materials, onDelete }: { materials: RawMaterial[]; onDelete: (type: string, id: number) => void }) {
   if (materials.length === 0)
     return (
       <div className="empty-state">
@@ -193,7 +193,7 @@ function MaterialsTable({ materials }: { materials: RawMaterial[] }) {
                 )}
               </td>
               <td>
-                <button className="btn btn-sm" onClick={() => handleDelete("raw", m.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                <button className="btn btn-sm" onClick={() => onDelete("raw", m.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
                   <Trash2 size={16} />
                 </button>
               </td>
@@ -205,7 +205,7 @@ function MaterialsTable({ materials }: { materials: RawMaterial[] }) {
   );
 }
 
-function SuppliersTable({ suppliers, materials }: { suppliers: Supplier[]; materials: RawMaterial[] }) {
+function SuppliersTable({ suppliers, materials, onDelete }: { suppliers: Supplier[]; materials: RawMaterial[]; onDelete: (type: string, id: number) => void }) {
   const [expanded, setExpanded] = useState<number | null>(null);
   if (suppliers.length === 0)
     return (
@@ -238,6 +238,9 @@ function SuppliersTable({ suppliers, materials }: { suppliers: Supplier[]; mater
                 ) : (
                   <span className="badge badge-green">Hisob-kitob to'liq</span>
                 )}
+                <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); onDelete("supplier", s.id); }} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                  <Trash2 size={16} />
+                </button>
                 {expanded === s.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </div>
             </div>
@@ -262,7 +265,7 @@ function SuppliersTable({ suppliers, materials }: { suppliers: Supplier[]; mater
                         <td className="text-green">{fmtAmount(m.paidAmount)}</td>
                         <td>{m.debtAmount > 0 ? <span className="badge badge-red">{fmtAmount(m.debtAmount)}</span> : <span className="badge badge-green">✓</span>}</td>
                         <td>
-                          <button className="btn btn-sm" onClick={() => handleDelete("raw", m.id)} style={{ color: "var(--accent-red)", padding: "0.2rem" }}>
+                          <button className="btn btn-sm" onClick={() => onDelete("raw", m.id)} style={{ color: "var(--accent-red)", padding: "0.2rem" }}>
                             <Trash2 size={14} />
                           </button>
                         </td>
@@ -279,7 +282,7 @@ function SuppliersTable({ suppliers, materials }: { suppliers: Supplier[]; mater
   );
 }
 
-function PaymentsTable({ payments }: { payments: SupplierPayment[] }) {
+function PaymentsTable({ payments, onDelete }: { payments: SupplierPayment[]; onDelete: (type: string, id: number) => void }) {
   if (payments.length === 0)
     return (
       <div className="empty-state">
@@ -305,7 +308,7 @@ function PaymentsTable({ payments }: { payments: SupplierPayment[] }) {
               <td className="text-green" style={{ fontWeight: 700 }}>{fmtAmount(p.amount)}</td>
               <td className="text-muted">{p.notes ?? "—"}</td>
               <td>
-                <button className="btn btn-sm" onClick={() => handleDelete("expense", p.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                <button className="btn btn-sm" onClick={() => onDelete("expense", p.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
                   <Trash2 size={16} />
                 </button>
               </td>
