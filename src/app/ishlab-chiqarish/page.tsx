@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import { Plus, X, Factory, PackagePlus, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
 import { fmtAmount, fmtWeight } from "@/lib/utils";
+import { useToast } from "@/components/ToastContext";
+
 
 
 
@@ -174,6 +176,7 @@ function AddProductionModal({
   ]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   const addItem = () => setItems([...items, { size: 12, count: 0, weightGrams: 0 }]);
   const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i));
@@ -194,6 +197,7 @@ function AddProductionModal({
       body: JSON.stringify({ date, notes, items: filteredItems }),
     });
     if (!res.ok) { const d = await res.json(); setError(d.error); setSaving(false); return; }
+    showToast("Mahsulotlar muvaffaqiyatli qo'shildi!");
     onSuccess();
   };
 

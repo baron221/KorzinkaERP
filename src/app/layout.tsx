@@ -3,6 +3,7 @@ import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ToastProvider } from "@/components/ToastContext";
 
 export const metadata: Metadata = {
   title: "CRM — Korzinka Ishlab Chiqarish",
@@ -28,38 +29,40 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          {/* Desktop layout: sidebar + main */}
-          <div className="desktop-layout">
-            <Sidebar />
-            <main
-              style={{
-                flex: 1,
-                overflow: "auto",
-                padding: "1.5rem",
-                background: "var(--bg-primary)",
-                transition: "background 0.3s ease",
-              }}
-            >
-              {children}
-            </main>
-          </div>
+          <ToastProvider>
+            {/* Desktop layout: sidebar + main */}
+            <div className="desktop-layout">
+              <Sidebar />
+              <main
+                style={{
+                  flex: 1,
+                  overflow: "auto",
+                  padding: "1.5rem",
+                  background: "var(--bg-primary)",
+                  transition: "background 0.3s ease",
+                }}
+              >
+                {children}
+              </main>
+            </div>
 
-          {/* Mobile layout: full content + bottom nav */}
-          <div className="mobile-layout">
-            <main
-              style={{
-                flex: 1,
-                overflow: "auto",
-                padding: "0.875rem",
-                background: "var(--bg-primary)",
-                paddingBottom: "76px", /* above bottom nav */
-                minHeight: "100vh",
-              }}
-            >
-              {children}
-            </main>
-            <BottomNav />
-          </div>
+            {/* Mobile layout: full content + bottom nav */}
+            <div className="mobile-layout">
+              <main
+                style={{
+                  flex: 1,
+                  overflow: "auto",
+                  padding: "0.875rem",
+                  background: "var(--bg-primary)",
+                  paddingBottom: "76px", /* above bottom nav */
+                  minHeight: "100vh",
+                }}
+              >
+                {children}
+              </main>
+              <BottomNav />
+            </div>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import { Plus, X, ChevronDown, ChevronUp, Truck, Package, UserPlus, CreditCard, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
 import { fmtAmount, fmtWeight } from "@/lib/utils";
+import { useToast } from "@/components/ToastContext";
+
 
 
 
@@ -323,11 +325,13 @@ function PaymentsTable({ payments, onDelete }: { payments: SupplierPayment[]; on
 function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [form, setForm] = useState({ name: "", phone: "", address: "" });
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
 
   const submit = async () => {
     if (!form.name) return;
     setSaving(true);
     await fetch("/api/suppliers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    showToast("Ta'minotchi muvaffaqiyatli qo'shildi!");
     onSuccess();
   };
 
@@ -354,6 +358,7 @@ function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Suppli
   const [form, setForm] = useState({ supplierId: "", weightKg: "", pricePerKg: "", paidAmount: "0", notes: "", date: new Date().toISOString().slice(0, 10) });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   const total = parseFloat(form.weightKg || "0") * parseFloat(form.pricePerKg || "0");
   const debt = total - parseFloat(form.paidAmount || "0");
@@ -363,6 +368,7 @@ function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Suppli
     setSaving(true);
     const res = await fetch("/api/raw-materials", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     if (!res.ok) { const d = await res.json(); setError(d.error); setSaving(false); return; }
+    showToast("Seryo kirimi muvaffaqiyatli saqlandi!");
     onSuccess();
   };
 
@@ -419,12 +425,14 @@ function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Suppli
 function AddPaymentModal({ suppliers, materials, onClose, onSuccess }: { suppliers: Supplier[]; materials: RawMaterial[]; onClose: () => void; onSuccess: () => void }) {
   const [form, setForm] = useState({ supplierId: "", rawMaterialId: "", amount: "", notes: "", date: new Date().toISOString().slice(0, 10) });
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
 
   const filteredMaterials = materials.filter((m) => m.supplierId === parseInt(form.supplierId) && m.debtAmount > 0);
 
   const submit = async () => {
     setSaving(true);
     await fetch("/api/supplier-payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    showToast("To'lov muvaffaqiyatli saqlandi!");
     onSuccess();
   };
 

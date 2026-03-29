@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import { Plus, X, Users, Search, UserPlus, ShoppingCart, Wallet, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
 import { fmtAmount } from "@/lib/utils";
+import { useToast } from "@/components/ToastContext";
+
 
 
 
@@ -260,11 +262,13 @@ function DebtList({ customers }: { customers: Customer[] }) {
 function AddCustomerModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [form, setForm] = useState({ name: "", phone: "", address: "" });
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
 
   const submit = async () => {
     if (!form.name) return;
     setSaving(true);
     await fetch("/api/customers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    showToast("Mijoz muvaffaqiyatli qo'shildi!");
     onSuccess();
   };
 
@@ -300,6 +304,7 @@ function AddSaleModal({ customers, stock, onClose, onSuccess }: {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   const totalAmount = items.reduce((s, i) => s + i.count * i.unitPrice, 0);
   const debt = totalAmount - parseFloat(paidAmount || "0");
@@ -320,6 +325,7 @@ function AddSaleModal({ customers, stock, onClose, onSuccess }: {
       body: JSON.stringify({ customerId, items: filtered, paidAmount, notes, date }),
     });
     if (!res.ok) { const d = await res.json(); setError(d.error); setSaving(false); return; }
+    showToast("Savdo muvaffaqiyatli saqlandi!");
     onSuccess();
   };
 
@@ -412,6 +418,7 @@ function AddPaymentModal({ customers, onClose, onSuccess }: {
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
 
   const loadSales = useCallback(async (cid: string) => {
     if (!cid) { setSales([]); return; }
@@ -428,6 +435,7 @@ function AddPaymentModal({ customers, onClose, onSuccess }: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ customerId, saleId: saleId || null, amount, notes, date }),
     });
+    showToast("To'lov muvaffaqiyatli saqlandi!");
     onSuccess();
   };
 

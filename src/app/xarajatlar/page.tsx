@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import { Plus, X, Receipt, Edit3, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
 import { fmtAmount } from "@/lib/utils";
+import { useToast } from "@/components/ToastContext";
+
 
 
 
@@ -145,13 +147,15 @@ export default function XarajatlarPage() {
 }
 
 function AddExpenseModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ category: "ELECTRICITY", amount: "", notes: "", date: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState({ category: "ELECTRICITY", amount: "", notes: "", date: new Date().toISOString().slice(0, 7) });
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
 
   const submit = async () => {
     if (!form.amount) return;
     setSaving(true);
     await fetch("/api/expenses", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    showToast("Xarajat muvaffaqiyatli saqlandi!");
     onSuccess();
   };
 
