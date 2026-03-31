@@ -80,8 +80,6 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(material, { status: 201 });
-
-    return NextResponse.json(material, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Server xatosi" }, { status: 500 });

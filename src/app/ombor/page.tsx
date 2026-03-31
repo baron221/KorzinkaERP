@@ -358,10 +358,25 @@ function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Suppli
   const [form, setForm] = useState({ supplierId: "", weightKg: "", pricePerKg: "", paidAmount: "0", notes: "", date: new Date().toISOString().slice(0, 10) });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [prepaymentBalance, setPrepaymentBalance] = useState(0);
   const { showToast } = useToast();
 
   const total = parseFloat(form.weightKg || "0") * parseFloat(form.pricePerKg || "0");
   const debt = total - parseFloat(form.paidAmount || "0");
+  const debtAfterPrepayment = Math.max(0, debt - prepaymentBalance);
+
+  // Fetch unlinked payments (prepayments) for selected supplier
+  useEffect(() => {
+    if (!form.supplierId) { setPrepaymentBalance(0); return; }
+    fetch(`/api/supplier-payments?supplierId=${form.supplierId}&unlinked=true`)
+      .then((r) => r.json())
+      .then((payments: { amount: number }[]) => {
+        if (Array.isArray(payments)) {
+          setPrepaymentBalance(payments.reduce((s, p) => s + p.amount, 0));
+        }
+      })
+      .catch(() => setPrepaymentBalance(0));
+  }, [form.supplierId]);
 
   const submit = async () => {
     if (!form.supplierId || !form.weightKg || !form.pricePerKg) { setError("Barcha majburiy maydonlarni to'ldiring"); return; }
@@ -380,6 +395,14 @@ function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Suppli
           <button className="btn btn-secondary btn-sm" onClick={onClose}><X size={14} /></button>
         </div>
         {error && <div className="alert alert-danger" style={{ marginBottom: "1rem" }}>{error}</div>}
+
+        {/* Prepayment notice */}
+        {prepaymentBalance > 0 && (
+          <div className="alert alert-success" style={{ marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            💰 Bu ta'minotchida <strong style={{ marginLeft: 4 }}>{fmtAmount(prepaymentBalance)}</strong>&nbsp;avans to'lov mavjud — yangi kirimga avtomatik qo'llanadi.
+          </div>
+        )}
+
         <div className="grid-2">
           <div className="form-group">
             <label>Ta'minotchi *</label>
@@ -404,7 +427,11 @@ function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Suppli
         </div>
         {total > 0 && (
           <div className="alert alert-warning" style={{ marginBottom: "1rem" }}>
-            Jami summa: <strong>{fmtAmount(total)}</strong>{debt > 0 && <> | Qarz: <strong className="text-red">{fmtAmount(debt)}</strong></>}
+            Jami summa: <strong>{fmtAmount(total)}</strong>
+            {debt > 0 && <> | Qarz: <strong className="text-red">{fmtAmount(debt)}</strong></>}
+            {prepaymentBalance > 0 && debt > 0 && (
+              <> | Avansdan so'ng: <strong style={{ color: "var(--accent-green)" }}>{fmtAmount(debtAfterPrepayment)}</strong></>
+            )}
           </div>
         )}
         <div className="form-group">

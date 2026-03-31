@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/supplier-payments
-export async function GET() {
+// GET /api/supplier-payments?supplierId=&unlinked=true
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const supplierId = searchParams.get("supplierId");
+  const unlinked = searchParams.get("unlinked") === "true";
+
+  const where: any = {};
+  if (supplierId) where.supplierId = parseInt(supplierId);
+  if (unlinked) where.rawMaterialId = null;
+
   const payments = await prisma.supplierPayment.findMany({
+    where,
     include: { supplier: true },
     orderBy: { date: "desc" },
   });
