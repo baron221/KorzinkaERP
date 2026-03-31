@@ -17,9 +17,22 @@ export async function DELETE(req: NextRequest) {
     const id = parseInt(idStr);
 
     switch (type) {
-      case "customer":
+      case "customer": {
+        // Get all sales for this customer
+        const customerSales = await prisma.sale.findMany({
+          where: { customerId: id },
+          select: { id: true },
+        });
+        const saleIds = customerSales.map((s) => s.id);
+        // Delete in order: payments → sale items → sales → customer
+        await prisma.customerPayment.deleteMany({ where: { customerId: id } });
+        if (saleIds.length > 0) {
+          await prisma.saleItem.deleteMany({ where: { saleId: { in: saleIds } } });
+          await prisma.sale.deleteMany({ where: { customerId: id } });
+        }
         await prisma.customer.delete({ where: { id } });
         break;
+      }
       case "supplier":
         await prisma.supplier.delete({ where: { id } });
         break;
