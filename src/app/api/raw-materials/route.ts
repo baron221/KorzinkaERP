@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     }
 
     const totalAmount = parseFloat(weightKg) * parseFloat(pricePerKg);
-    const paid = parseFloat(paidAmount ?? 0);
+    const paid = parseFloat(paidAmount) || 0;
     const debt = totalAmount - paid;
 
     const material = await prisma.$transaction(async (tx) => {
