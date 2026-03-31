@@ -9,6 +9,7 @@ export async function GET() {
         take: 5,
       },
     },
+    where: { isDeleted: false },
     orderBy: { createdAt: "desc" },
   });
   return NextResponse.json(suppliers);

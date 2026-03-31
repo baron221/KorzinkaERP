@@ -11,6 +11,7 @@ export async function GET() {
           include: { items: true },
         },
       },
+      where: { isDeleted: false },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(customers);
