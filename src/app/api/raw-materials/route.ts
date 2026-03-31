@@ -29,17 +29,54 @@ export async function POST(req: NextRequest) {
     const paid = parseFloat(paidAmount ?? 0);
     const debt = totalAmount - paid;
 
-    const material = await prisma.rawMaterial.create({
-      data: {
-        supplierId: parseInt(supplierId),
-        weightKg: parseFloat(weightKg),
-        pricePerKg: parseFloat(pricePerKg),
-        totalAmount,
-        paidAmount: paid,
-        debtAmount: debt,
-        notes: notes || null,
-        date: date ? new Date(date) : new Date(),
-      },
+    const material = await prisma.$transaction(async (tx) => {
+      // Create the material entry
+      const mat = await tx.rawMaterial.create({
+        data: {
+          supplierId: parseInt(supplierId),
+          weightKg: parseFloat(weightKg),
+          pricePerKg: parseFloat(pricePerKg),
+          totalAmount,
+          paidAmount: paid,
+          debtAmount: debt,
+          notes: notes || null,
+          date: date ? new Date(date) : new Date(),
+        },
+      });
+
+      // Auto-apply any existing prepayments (unlinked payments) for this supplier — FIFO
+      if (mat.debtAmount > 0) {
+        const prepayments = await tx.supplierPayment.findMany({
+          where: { supplierId: mat.supplierId, rawMaterialId: null },
+          orderBy: { date: "asc" },
+        });
+
+        let remainingDebt = mat.debtAmount;
+        for (const pp of prepayments) {
+          if (remainingDebt <= 0) break;
+          const apply = Math.min(pp.amount, remainingDebt);
+          remainingDebt -= apply;
+
+          // Link this prepayment to the new material
+          await tx.supplierPayment.update({
+            where: { id: pp.id },
+            data: { rawMaterialId: mat.id },
+          });
+        }
+
+        // Update the material's paid/debt amounts
+        if (remainingDebt < mat.debtAmount) {
+          await tx.rawMaterial.update({
+            where: { id: mat.id },
+            data: {
+              paidAmount: totalAmount - remainingDebt,
+              debtAmount: Math.max(0, remainingDebt),
+            },
+          });
+        }
+      }
+
+      return tx.rawMaterial.findUnique({ where: { id: mat.id } });
     });
 
     return NextResponse.json(material, { status: 201 });
