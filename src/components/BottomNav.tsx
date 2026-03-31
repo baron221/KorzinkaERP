@@ -14,7 +14,7 @@ import {
 const navItems = [
   { href: "/", label: "Bosh", icon: LayoutDashboard, color: "#4f46e5" },
   { href: "/ombor", label: "Ombor", icon: Package, color: "#0891b2" },
-  { href: "/ishlab-chiqarish", label: "Ishlab chiqarish", icon: Factory, color: "#059669" },
+  { href: "/ishlab-chiqarish", label: "Ishlab ch.", icon: Factory, color: "#059669" },
   { href: "/mijozlar", label: "Mijozlar", icon: Users, color: "#d97706" },
   { href: "/xarajatlar", label: "Xarajat", icon: Receipt, color: "#dc2626" },
   { href: "/hisobot", label: "Hisobot", icon: BarChart3, color: "#7c3aed" },
