@@ -33,9 +33,21 @@ export async function DELETE(req: NextRequest) {
         await prisma.customer.delete({ where: { id } });
         break;
       }
-      case "supplier":
+      case "supplier": {
+        // Get all raw material IDs for this supplier
+        const supplierMaterials = await prisma.rawMaterial.findMany({
+          where: { supplierId: id },
+          select: { id: true },
+        });
+        const matIds = supplierMaterials.map((m) => m.id);
+        // Delete in order: payments → raw materials → supplier
+        await prisma.supplierPayment.deleteMany({ where: { supplierId: id } });
+        if (matIds.length > 0) {
+          await prisma.rawMaterial.deleteMany({ where: { supplierId: id } });
+        }
         await prisma.supplier.delete({ where: { id } });
         break;
+      }
       case "expense":
         await prisma.expense.delete({ where: { id } });
         break;
