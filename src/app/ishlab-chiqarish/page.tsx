@@ -117,6 +117,7 @@ export default function IslabChiqarishPage() {
                 <th>R14</th>
                 <th>R16</th>
                 <th>Izoh</th>
+                <th>Amal</th>
               </tr>
             </thead>
             <tbody>
@@ -133,6 +134,15 @@ export default function IslabChiqarishPage() {
                     <td>{s14 > 0 ? <span className="badge badge-blue">{s14}</span> : "—"}</td>
                     <td>{s16 > 0 ? <span className="badge badge-blue">{s16}</span> : "—"}</td>
                     <td className="text-muted">{b.notes ?? "—"}</td>
+                    <td>
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => handleDelete("production", b.id)}
+                        style={{ color: "var(--accent-red)", padding: "0.4rem" }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
