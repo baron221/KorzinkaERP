@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   Sun,
   Moon,
+  Clock,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -22,6 +23,7 @@ const navItems = [
   { href: "/mijozlar", label: "Mijozlar & Savdo", icon: Users, color: "#d97706" },
   { href: "/xarajatlar", label: "Xarajatlar", icon: Receipt, color: "#dc2626" },
   { href: "/hisobot", label: "Hisobot & Foyda", icon: BarChart3, color: "#7c3aed" },
+  { href: "/tarix", label: "Tarix", icon: Clock, color: "#64748b" },
 ];
 
 export default function Sidebar() {

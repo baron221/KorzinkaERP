@@ -30,9 +30,11 @@ export async function DELETE(req: NextRequest) {
         await prisma.rawMaterial.delete({ where: { id } });
         break;
       case "production":
+        await prisma.productionItem.deleteMany({ where: { batchId: id } });
         await prisma.productionBatch.delete({ where: { id } });
         break;
       case "sale":
+        await prisma.saleItem.deleteMany({ where: { saleId: id } });
         await prisma.sale.delete({ where: { id } });
         break;
       default:

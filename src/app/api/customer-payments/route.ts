@@ -11,30 +11,60 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Majburiy maydonlar" }, { status: 400 });
     }
 
-    const payment = await prisma.customerPayment.create({
-      data: {
-        customerId: parseInt(customerId),
-        saleId: saleId ? parseInt(saleId) : null,
-        amount: parseFloat(amount),
-        notes: notes || null,
-        date: date ? new Date(date) : new Date(),
-      },
+    const amountFloat = parseFloat(amount);
+    const customerIdInt = parseInt(customerId);
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Create the payment record
+      const payment = await tx.customerPayment.create({
+        data: {
+          customerId: customerIdInt,
+          saleId: saleId ? parseInt(saleId) : null,
+          amount: amountFloat,
+          notes: notes || null,
+          date: date ? new Date(date) : new Date(),
+        },
+      });
+
+      // 2. Distribute payment to sales
+      if (saleId) {
+        // Specific sale payment
+        const sale = await tx.sale.findUnique({ where: { id: parseInt(saleId) } });
+        if (sale) {
+          const newPaid = sale.paidAmount + amountFloat;
+          const newDebt = Math.max(0, sale.totalAmount - newPaid);
+          await tx.sale.update({
+            where: { id: parseInt(saleId) },
+            data: { paidAmount: newPaid, debtAmount: newDebt },
+          });
+        }
+      } else {
+        // General payment: apply to unpaid sales (FIFO)
+        const unpaidSales = await tx.sale.findMany({
+          where: { customerId: customerIdInt, debtAmount: { gt: 0 } },
+          orderBy: { date: "asc" },
+        });
+
+        let remainingAmount = amountFloat;
+        for (const sale of unpaidSales) {
+          if (remainingAmount <= 0) break;
+
+          const paymentToApply = Math.min(remainingAmount, sale.debtAmount);
+          const newPaid = sale.paidAmount + paymentToApply;
+          const newDebt = sale.debtAmount - paymentToApply;
+
+          await tx.sale.update({
+            where: { id: sale.id },
+            data: { paidAmount: newPaid, debtAmount: newDebt },
+          });
+
+          remainingAmount -= paymentToApply;
+        }
+      }
+      return payment;
     });
 
-    // Update sale debt amount if linked
-    if (saleId) {
-      const sale = await prisma.sale.findUnique({ where: { id: parseInt(saleId) } });
-      if (sale) {
-        const newPaid = sale.paidAmount + parseFloat(amount);
-        const newDebt = Math.max(0, sale.totalAmount - newPaid);
-        await prisma.sale.update({
-          where: { id: parseInt(saleId) },
-          data: { paidAmount: newPaid, debtAmount: newDebt },
-        });
-      }
-    }
-
-    return NextResponse.json(payment, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Server xatosi" }, { status: 500 });

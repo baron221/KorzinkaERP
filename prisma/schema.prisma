@@ -86,7 +86,7 @@ model ProductionItem {
 // ============================================================
 model Customer {
   id        Int      @id @default(autoincrement())
-  name      String
+  name      String   @unique
   phone     String?
   address   String?
   notes     String?
