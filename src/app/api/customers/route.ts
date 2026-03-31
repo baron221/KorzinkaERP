@@ -11,7 +11,6 @@ export async function GET() {
           include: { items: true },
         },
       },
-      where: { isDeleted: false },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(customers);
@@ -25,10 +24,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { name, phone, address, notes } = body;
-    const existing = await prisma.customer.findUnique({ where: { name } });
-    if (existing) {
-      return NextResponse.json({ error: "Bu ismdagi mijoz allaqachon mavjud" }, { status: 400 });
-    }
+    if (!name) return NextResponse.json({ error: "Ism kerak" }, { status: 400 });
 
     const customer = await prisma.customer.create({
       data: { name, phone: phone || null, address: address || null, notes: notes || null },

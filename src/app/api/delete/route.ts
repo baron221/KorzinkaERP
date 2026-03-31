@@ -18,16 +18,10 @@ export async function DELETE(req: NextRequest) {
 
     switch (type) {
       case "customer":
-        await prisma.customer.update({
-          where: { id },
-          data: { isDeleted: true },
-        });
+        await prisma.customer.delete({ where: { id } });
         break;
       case "supplier":
-        await prisma.supplier.update({
-          where: { id },
-          data: { isDeleted: true },
-        });
+        await prisma.supplier.delete({ where: { id } });
         break;
       case "expense":
         await prisma.expense.delete({ where: { id } });
