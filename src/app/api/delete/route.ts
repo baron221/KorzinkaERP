@@ -48,6 +48,20 @@ export async function DELETE(req: NextRequest) {
         await prisma.supplier.delete({ where: { id } });
         break;
       }
+      case "supplier-payment": {
+        const payment = await prisma.supplierPayment.findUnique({ where: { id } });
+        if (payment?.rawMaterialId) {
+          await prisma.rawMaterial.update({
+            where: { id: payment.rawMaterialId },
+            data: {
+              paidAmount: { decrement: payment.amount },
+              debtAmount: { increment: payment.amount },
+            },
+          });
+        }
+        await prisma.supplierPayment.delete({ where: { id } });
+        break;
+      }
       case "expense":
         await prisma.expense.delete({ where: { id } });
         break;

@@ -310,7 +310,7 @@ function PaymentsTable({ payments, onDelete }: { payments: SupplierPayment[]; on
               <td className="text-green" style={{ fontWeight: 700 }}>{fmtAmount(p.amount)}</td>
               <td className="text-muted">{p.notes ?? "—"}</td>
               <td>
-                <button className="btn btn-sm" onClick={() => onDelete("expense", p.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                <button className="btn btn-sm" onClick={() => onDelete("supplier-payment", p.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
                   <Trash2 size={16} />
                 </button>
               </td>
