@@ -36,9 +36,18 @@ export async function GET() {
 
     // Other aggregations
     const rawAgg = await prisma.rawMaterial.aggregate({
-      _sum: { totalAmount: true, paidAmount: true },
+      _sum: { debtAmount: true },
     });
-    const supplierDebt = (rawAgg._sum.totalAmount ?? 0) - (rawAgg._sum.paidAmount ?? 0);
+    const totalMaterialDebt = rawAgg._sum.debtAmount ?? 0;
+
+    const unlinkedPayments = await prisma.supplierPayment.aggregate({
+      where: { rawMaterialId: null },
+      _sum: { amount: true },
+    });
+    const totalPrepayments = unlinkedPayments._sum.amount ?? 0;
+
+    // True supplier debt = Unpaid material debt minus any unused prepayments
+    const supplierDebt = totalMaterialDebt - totalPrepayments;
 
     const saleAgg = await prisma.sale.aggregate({
       _sum: { totalAmount: true, paidAmount: true, debtAmount: true },

@@ -101,8 +101,10 @@ export default function DashboardPage() {
     },
     {
       label: "Ta'minotchi Qarzi",
-      value: fmt(data.supplierDebt),
-      sub: "To'lanmagan nasiya",
+      value: data.supplierDebt < 0 
+        ? `+ ${fmt(Math.abs(data.supplierDebt))}` 
+        : fmt(data.supplierDebt),
+      sub: data.supplierDebt < 0 ? "Ortiqcha to'lov (Avans)" : "To'lanmagan nasiya",
       icon: TrendingDown,
       gradient: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
       lightBg: "#ede9fe",
