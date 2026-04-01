@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, AlertCircle, Download } from "lucide-react";
 
 interface ReportData {
   totalRevenue: number;
@@ -78,11 +78,21 @@ export default function HisobotPage() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <div className="page-title">Hisobot va Sof Foyda</div>
           <div className="page-sub">Foyda va Zarar (P&L) hisobot</div>
         </div>
+        <button
+          onClick={() => {
+            window.location.href = "/api/export-excel";
+          }}
+          className="btn-primary"
+          style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.6rem 1.2rem", borderRadius: "8px", border: "none", cursor: "pointer", background: "var(--accent-blue, #3b82f6)", color: "white", fontWeight: 600, fontSize: "0.9rem" }}
+        >
+          <Download size={18} />
+          Excelga Yuklash
+        </button>
       </div>
 
       {/* Net Profit Banner */}
