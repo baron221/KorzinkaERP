@@ -24,8 +24,12 @@ export const fmtWeight = (kg: number | string | null | undefined): string => {
   if (isNaN(val)) return "0 kg";
 
   if (val >= 1000) {
-    const tons = val / 1000;
-    return (Number.isInteger(tons) ? tons.toString() : tons.toFixed(2)) + " t";
+    const tons = Math.floor(val / 1000);
+    const kilos = Math.round(val % 1000);
+    if (kilos === 0) {
+      return `${tons} tonna`;
+    }
+    return `${tons} tonna ${kilos} kg`;
   }
   return val + " kg";
 };
