@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Plus, X, ChevronDown, ChevronUp, Truck, Package, UserPlus, CreditCard, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
+import NumericInput from "@/components/NumericInput";
 import { fmtAmount, fmtWeight } from "@/lib/utils";
 import { useToast } from "@/components/ToastContext";
 
@@ -416,12 +417,12 @@ function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Suppli
         <div className="grid-2">
           <div className="form-group">
             <label>Og'irlik (kg) *</label>
-            <input type="number" className="input" value={form.weightKg} onChange={(e) => setForm({ ...form, weightKg: e.target.value })} placeholder="1000" />
+            <NumericInput value={form.weightKg} onChange={(val) => setForm({ ...form, weightKg: val })} placeholder="1000" />
             {form.weightKg && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtWeight(parseFloat(form.weightKg))}</div>}
           </div>
           <div className="form-group">
             <label>1 kg narxi (so'm) *</label>
-            <input type="number" className="input" value={form.pricePerKg} onChange={(e) => setForm({ ...form, pricePerKg: e.target.value })} placeholder="5000" />
+            <NumericInput value={form.pricePerKg} onChange={(val) => setForm({ ...form, pricePerKg: val })} placeholder="5000" />
             {form.pricePerKg && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(form.pricePerKg))}</div>}
           </div>
         </div>
@@ -436,7 +437,7 @@ function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Suppli
         )}
         <div className="form-group">
           <label>To'langan summa (so'm)</label>
-          <input type="number" className="input" value={form.paidAmount} onChange={(e) => setForm({ ...form, paidAmount: e.target.value })} placeholder="0" />
+          <NumericInput value={form.paidAmount} onChange={(val) => setForm({ ...form, paidAmount: val })} placeholder="0" />
           {form.paidAmount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(form.paidAmount))}</div>}
         </div>
         <div className="form-group"><label>Izoh</label><input className="input" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Ixtiyoriy" /></div>
@@ -489,7 +490,7 @@ function AddPaymentModal({ suppliers, materials, onClose, onSuccess }: { supplie
         <div className="grid-2">
           <div className="form-group">
             <label>Summa (so'm) *</label>
-            <input type="number" className="input" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="500000" />
+            <NumericInput value={form.amount} onChange={(val) => setForm({ ...form, amount: val })} placeholder="500000" />
             {form.amount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(form.amount))}</div>}
           </div>
           <div className="form-group"><label>Sana</label><input type="date" className="input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>

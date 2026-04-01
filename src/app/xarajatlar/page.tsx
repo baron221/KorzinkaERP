@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Plus, X, Receipt, Edit3, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
+import NumericInput from "@/components/NumericInput";
 import { fmtAmount } from "@/lib/utils";
 import { useToast } from "@/components/ToastContext";
 
@@ -177,7 +178,7 @@ function AddExpenseModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         <div className="grid-2">
           <div className="form-group">
             <label>Summa (so'm) *</label>
-            <input type="number" className="input" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="500000" />
+            <NumericInput value={form.amount} onChange={(val) => setForm({ ...form, amount: val })} placeholder="500000" />
             {form.amount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(form.amount))}</div>}
           </div>
           <div className="form-group"><label>Sana</label><input type="date" className="input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>

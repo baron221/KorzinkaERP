@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Plus, X, Users, Search, UserPlus, ShoppingCart, Wallet, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
+import NumericInput from "@/components/NumericInput";
 import { fmtAmount } from "@/lib/utils";
 import { useToast } from "@/components/ToastContext";
 
@@ -371,9 +372,9 @@ function AddSaleModal({ customers, stock, onClose, onSuccess }: {
                 <option value={14}>Razmer 14</option>
                 <option value={16}>Razmer 16</option>
               </select>
-              <input type="number" className="input" placeholder="0" value={item.count || ""} onChange={(e) => updateItem(i, "count", e.target.value)} />
-              <div style={{ position: "relative" }}>
-                <input type="number" className="input" placeholder="Narx" value={item.unitPrice || ""} onChange={(e) => updateItem(i, "unitPrice", e.target.value)} />
+              <div style={{ flex: 1 }}><NumericInput value={item.count || ""} onChange={(val) => updateItem(i, "count", val)} allowDecimals={false} placeholder="0" /></div>
+              <div style={{ flex: 1 }}>
+                <NumericInput value={item.unitPrice || ""} onChange={(val) => updateItem(i, "unitPrice", val)} placeholder="Narx" />
                 {item.unitPrice > 0 && <div style={{ fontSize: "0.65rem", color: "var(--accent-primary)", marginTop: "2px" }}>{fmtAmount(item.unitPrice)}</div>}
               </div>
               <button className="btn btn-danger btn-sm" onClick={() => removeItem(i)} style={{ padding: "0.35rem" }}><X size={12} /></button>
@@ -391,7 +392,7 @@ function AddSaleModal({ customers, stock, onClose, onSuccess }: {
         <div className="grid-2">
           <div className="form-group">
             <label>To'langan summa</label>
-            <input type="number" className="input" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} />
+            <NumericInput value={paidAmount} onChange={(val) => setPaidAmount(val)} placeholder="0" />
             {paidAmount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(paidAmount))}</div>}
           </div>
           <div className="form-group"><label>Izoh</label><input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
@@ -465,7 +466,7 @@ function AddPaymentModal({ customers, onClose, onSuccess }: {
         <div className="grid-2">
           <div className="form-group">
             <label>Summa (so'm) *</label>
-            <input type="number" className="input" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="1000000" />
+            <NumericInput value={amount} onChange={(val) => setAmount(val)} placeholder="1000000" />
             {amount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(amount))}</div>}
           </div>
           <div className="form-group"><label>Sana</label><input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} /></div>

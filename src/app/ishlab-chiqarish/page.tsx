@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Plus, X, Factory, PackagePlus, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
+import NumericInput from "@/components/NumericInput";
 import { fmtAmount, fmtWeight } from "@/lib/utils";
 import { useToast } from "@/components/ToastContext";
 
@@ -240,9 +241,20 @@ function AddProductionModal({
                 <option value={14}>Razmer 14</option>
                 <option value={16}>Razmer 16</option>
               </select>
-              <input type="number" className="input" placeholder="Soni (ta)" value={item.count || ""} onChange={(e) => updateItem(i, "count", e.target.value)} />
-              <div>
-                <input type="number" className="input" placeholder="Og'irligi (g)" value={item.weightGrams || ""} onChange={(e) => updateItem(i, "weightGrams", e.target.value)} />
+              <div style={{ flex: 1 }}>
+                <NumericInput 
+                  value={item.count || ""} 
+                  onChange={(val) => updateItem(i, "count", val)} 
+                  allowDecimals={false} 
+                  placeholder="Soni (ta)" 
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <NumericInput 
+                  value={item.weightGrams || ""} 
+                  onChange={(val) => updateItem(i, "weightGrams", val)} 
+                  placeholder="Og'irligi (g)" 
+                />
                 {item.weightGrams > 0 && <div style={{ fontSize: "0.65rem", color: "var(--accent-primary)" }}>{(item.weightGrams / 1000).toFixed(3)} kg</div>}
               </div>
               <button className="btn btn-danger btn-sm" onClick={() => removeItem(i)} style={{ padding: "0.35rem" }}><X size={12} /></button>
