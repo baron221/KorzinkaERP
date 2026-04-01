@@ -300,7 +300,7 @@ function AddSaleModal({ customers, stock, onClose, onSuccess }: {
 }) {
   const [customerId, setCustomerId] = useState("");
   const [items, setItems] = useState([{ size: 12, count: 0, unitPrice: 0 }]);
-  const [paidAmount, setPaidAmount] = useState("0");
+  const [paidAmount, setPaidAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);

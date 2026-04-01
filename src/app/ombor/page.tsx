@@ -356,7 +356,7 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
 }
 
 function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Supplier[]; onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ supplierId: "", weightKg: "", pricePerKg: "", paidAmount: "0", notes: "", date: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState({ supplierId: "", weightKg: "", pricePerKg: "", paidAmount: "", notes: "", date: new Date().toISOString().slice(0, 10) });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [prepaymentBalance, setPrepaymentBalance] = useState(0);
