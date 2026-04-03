@@ -138,6 +138,15 @@ export async function GET(req: NextRequest) {
       include: { customer: true },
     });
 
+    // Production Extra Costs (Worker + Electricity) based on actual production
+    const prodBatchAgg = await prisma.productionBatch.aggregate({
+      where: dateFilter,
+      _sum: { totalBaskets: true },
+    });
+    const totalBasketsProduced = prodBatchAgg._sum.totalBaskets ?? 0;
+    const workerCost = totalBasketsProduced * 150;
+    const elecCost = totalBasketsProduced * 250;
+
     return NextResponse.json({
       stock: dynamicStock,
       supplierDebt,
@@ -147,6 +156,8 @@ export async function GET(req: NextRequest) {
       totalPaid: filteredSaleAgg._sum.paidAmount ?? 0,
       customerDebt: allDebtAgg._sum.debtAmount ?? 0,
       monthlyExpenses: expenseAgg._sum.amount ?? 0,
+      workerCost,
+      elecCost,
       customerCount: await prisma.customer.count(),
       supplierCount: await prisma.supplier.count(),
       recentSales,

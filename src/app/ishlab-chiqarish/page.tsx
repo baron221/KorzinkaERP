@@ -123,17 +123,45 @@ export default function IslabChiqarishPage() {
             </thead>
             <tbody>
               {batches.map((b) => {
-                const s12 = b.items.filter((i) => i.size === 12).reduce((s, i) => s + i.count, 0);
-                const s14 = b.items.filter((i) => i.size === 14).reduce((s, i) => s + i.count, 0);
-                const s16 = b.items.filter((i) => i.size === 16).reduce((s, i) => s + i.count, 0);
+                const getS = (size: number) => {
+                  const arr = b.items.filter((i) => i.size === size);
+                  return {
+                    count: arr.reduce((s, i) => s + i.count, 0),
+                    weight: arr[0]?.weightGrams
+                  };
+                };
+                const s12 = getS(12);
+                const s14 = getS(14);
+                const s16 = getS(16);
                 return (
                   <tr key={b.id}>
                     <td className="text-muted">{new Date(b.date).toLocaleDateString("uz-UZ")}</td>
                     <td style={{ fontWeight: 600 }}>{fmtWeight(b.rawUsedKg)}</td>
                     <td style={{ fontWeight: 700, color: "var(--accent-primary)" }}>{b.totalBaskets} ta</td>
-                    <td>{s12 > 0 ? <span className="badge badge-blue">{s12}</span> : "—"}</td>
-                    <td>{s14 > 0 ? <span className="badge badge-blue">{s14}</span> : "—"}</td>
-                    <td>{s16 > 0 ? <span className="badge badge-blue">{s16}</span> : "—"}</td>
+                    <td>
+                      {s12.count > 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "flex-start" }}>
+                          <span className="badge badge-blue">{s12.count}</span>
+                          {s12.weight ? <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{s12.weight}g</span> : null}
+                        </div>
+                      ) : "—"}
+                    </td>
+                    <td>
+                      {s14.count > 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "flex-start" }}>
+                          <span className="badge badge-blue">{s14.count}</span>
+                          {s14.weight ? <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{s14.weight}g</span> : null}
+                        </div>
+                      ) : "—"}
+                    </td>
+                    <td>
+                      {s16.count > 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "flex-start" }}>
+                          <span className="badge badge-blue">{s16.count}</span>
+                          {s16.weight ? <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{s16.weight}g</span> : null}
+                        </div>
+                      ) : "—"}
+                    </td>
                     <td className="text-muted">{b.notes ?? "—"}</td>
                     <td>
                       <button
