@@ -95,12 +95,12 @@ export async function GET(req: NextRequest) {
 
     const prodItemsAgg = await prisma.productionItem.groupBy({
       by: ["size"],
-      _sum: { count: true, weightGrams: true },
+      _avg: { weightGrams: true },
     });
     const sizeWeights: Record<number, number> = {};
     prodItemsAgg.forEach((p) => {
-      if (p._sum.count && p._sum.weightGrams) {
-        sizeWeights[p.size] = p._sum.weightGrams / p._sum.count;
+      if (p._avg.weightGrams) {
+        sizeWeights[p.size] = p._avg.weightGrams;
       }
     });
 
