@@ -37,15 +37,26 @@ interface DashboardData {
 const fmt = (n: number) =>
   new Intl.NumberFormat("uz-UZ").format(Math.round(n)) + " so'm";
 
+const formatWeight = (kg: number) => {
+  if (kg >= 1000) {
+    const tons = Math.floor(kg / 1000);
+    const kilos = Math.round(kg % 1000);
+    return kilos > 0 ? `${tons} t ${kilos} kg` : `${tons} t`;
+  }
+  return `${kg.toFixed(1)} kg`;
+};
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
-    fetch("/api/dashboard")
+    setLoading(true);
+    fetch(`/api/dashboard?date=${selectedDate}`)
       .then((r) => r.json())
       .then((d) => { setData(d); setLoading(false); });
-  }, []);
+  }, [selectedDate]);
 
   if (loading)
     return (
@@ -59,7 +70,7 @@ export default function DashboardPage() {
   const cards = [
     {
       label: "Xomashyo Ombori",
-      value: `${data.stock.rawStockKg.toFixed(1)} kg`,
+      value: formatWeight(data.stock.rawStockKg),
       sub: `Ta'minotchilar: ${data.supplierCount} ta`,
       icon: Package,
       gradient: "linear-gradient(135deg, #4f46e5, #6366f1)",
@@ -88,9 +99,9 @@ export default function DashboardPage() {
       href: "/mijozlar",
     },
     {
-      label: "Oylik Xarajat",
+      label: "Kunlik Xarajat",
       value: fmt(data.monthlyExpenses),
-      sub: "Joriy oy",
+      sub: "Tanlangan sana",
       icon: Receipt,
       gradient: "linear-gradient(135deg, #dc2626, #ef4444)",
       lightBg: "#fee2e2",
@@ -138,15 +149,32 @@ export default function DashboardPage() {
         {/* decorative circles */}
         <div style={{ position: "absolute", right: -30, top: -30, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
         <div style={{ position: "absolute", right: 60, bottom: -40, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.4rem" }}>
-            🧺 Korzinka ERP
+        <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem" }}>
+          <div>
+            <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.4rem" }}>
+              🧺 Korzinka ERP
+            </div>
+            <div style={{ fontSize: "1.6rem", fontWeight: 900, letterSpacing: "-0.02em" }}>
+              Bosh sahifa
+            </div>
           </div>
-          <div style={{ fontSize: "1.6rem", fontWeight: 900, letterSpacing: "-0.02em" }}>
-            Bosh sahifa
-          </div>
-          <div style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.7)", marginTop: "0.3rem" }}>
-            {new Date().toLocaleDateString("uz-UZ", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          <div style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", padding: "0.5rem 0.8rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.2)" }}>
+            <label style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.7rem", marginBottom: "0.2rem", display: "block" }}>Sana bo'yicha hisobot</label>
+            <input 
+              type="date" 
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                color: "white",
+                fontWeight: 600,
+                fontSize: "0.95rem",
+                fontFamily: "inherit",
+                colorScheme: "dark"
+              }}
+            />
           </div>
         </div>
       </div>

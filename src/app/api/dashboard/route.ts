@@ -1,11 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // ============================================================
 // GET /api/dashboard — dashboard summary stats
 // ============================================================
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const dateParam = searchParams.get("date");
+    
+    let dateFilter = {};
+    if (dateParam) {
+      const start = new Date(dateParam);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      dateFilter = { date: { gte: start, lt: end } };
+    }
+
     // 1. Dynamic Raw Stock: Received - Used
     const rawReceived = await prisma.rawMaterial.aggregate({ _sum: { weightKg: true } });
     const rawUsed = await prisma.productionBatch.aggregate({ _sum: { rawUsedKg: true } });
@@ -49,14 +61,24 @@ export async function GET() {
     // True supplier debt = Unpaid material debt minus any unused prepayments
     const supplierDebt = totalMaterialDebt - totalPrepayments;
 
-    const saleAgg = await prisma.sale.aggregate({
-      _sum: { totalAmount: true, paidAmount: true, debtAmount: true },
+    const filteredSaleAgg = await prisma.sale.aggregate({
+      where: dateFilter,
+      _sum: { totalAmount: true, paidAmount: true },
+    });
+    const allDebtAgg = await prisma.sale.aggregate({
+      _sum: { debtAmount: true },
     });
 
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    let expenseFilter = {};
+    if (dateParam) {
+      expenseFilter = dateFilter;
+    } else {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      expenseFilter = { date: { gte: monthStart } };
+    }
     const expenseAgg = await prisma.expense.aggregate({
-      where: { date: { gte: monthStart } },
+      where: expenseFilter,
       _sum: { amount: true },
     });
 
@@ -84,6 +106,7 @@ export async function GET() {
 
     const soldAgg = await prisma.saleItem.groupBy({
       by: ["size"],
+      where: Object.keys(dateFilter).length > 0 ? { sale: dateFilter } : undefined,
       _sum: { count: true },
     });
 
@@ -98,17 +121,19 @@ export async function GET() {
       totalCOGS += count * (costRaw + costWage + costElec);
     });
 
-    const totalExpensesEver = await prisma.expense.aggregate({
+    const totalExpensesForProfit = await prisma.expense.aggregate({
+      where: dateFilter,
       _sum: { amount: true },
     });
-    const totalExpAmount = totalExpensesEver._sum.amount ?? 0;
-    const totalRevAmount = saleAgg._sum.totalAmount ?? 0;
+    const totalExpAmount = totalExpensesForProfit._sum.amount ?? 0;
+    const totalRevAmount = filteredSaleAgg._sum.totalAmount ?? 0;
 
     // Sof Foyda = Yalpi Tushum - Tannarx(COGS) - Boshqa Xarajatlar
     const netProfit = totalRevAmount - totalCOGS - totalExpAmount;
 
     const recentSales = await prisma.sale.findMany({
       take: 5,
+      where: dateFilter,
       orderBy: { date: "desc" },
       include: { customer: true },
     });
@@ -119,8 +144,8 @@ export async function GET() {
       totalRevenue: totalRevAmount,
       totalCOGS,
       netProfit,
-      totalPaid: saleAgg._sum.paidAmount ?? 0,
-      customerDebt: saleAgg._sum.debtAmount ?? 0,
+      totalPaid: filteredSaleAgg._sum.paidAmount ?? 0,
+      customerDebt: allDebtAgg._sum.debtAmount ?? 0,
       monthlyExpenses: expenseAgg._sum.amount ?? 0,
       customerCount: await prisma.customer.count(),
       supplierCount: await prisma.supplier.count(),
