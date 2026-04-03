@@ -19,6 +19,7 @@ interface ReportData {
   totalRawCost: number;
   totalSupplierDebt: number;
   totalExpenses: number;
+  totalCOGS: number;
   netProfit: number;
   grossProfit: number;
   expensesByCategory: Array<{ category: string; _sum: { amount: number } }>;
@@ -71,7 +72,7 @@ export default function HisobotPage() {
 
   const summaryCards = [
     { label: "Jami Daromad", value: fmt(data.totalRevenue), sub: `Tushgan: ${fmt(data.totalCollected)}`, color: "#10b981", icon: TrendingUp },
-    { label: "Xomashyo Xarajati", value: fmt(data.totalRawCost), sub: `Qarz: ${fmt(data.totalSupplierDebt)}`, color: "#6366f1", icon: DollarSign },
+    { label: "Sotilganlarning Tannarxi", value: fmt(data.totalCOGS), sub: `Qarz: ${fmt(data.totalSupplierDebt)}`, color: "#6366f1", icon: DollarSign },
     { label: "Operatsion Xarajat", value: fmt(data.totalExpenses), sub: "Elektr, ish haqi, ovqat...", color: "#f59e0b", icon: DollarSign },
     { label: "Mijozlar Qarzi", value: fmt(data.totalCustomerDebt), sub: "Undirilmagan", color: "#ef4444", icon: AlertCircle },
   ];
@@ -115,7 +116,7 @@ export default function HisobotPage() {
             {fmt(Math.abs(data.netProfit))}
           </div>
           <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-            Seryo tannarxi + Xarajatlarni ayirib
+            Asl Tannarx (Xomashyo, Ishchi, Svet) + Boshqa xarajatlarni ayirib
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -215,11 +216,11 @@ export default function HisobotPage() {
               <td style={{ padding: "0.6rem 0", textAlign: "right", fontWeight: 600 }}>{fmt(data.totalRevenue)}</td>
             </tr>
             <tr>
-              <td style={{ padding: "0.6rem 0", color: "var(--text-secondary)" }}>— Xomashyo tannarxi</td>
-              <td style={{ padding: "0.6rem 0", textAlign: "right", fontWeight: 600, color: "var(--accent-red)" }}>- {fmt(data.totalRawCost)}</td>
+              <td style={{ padding: "0.6rem 0", color: "var(--text-secondary)" }}>— Sotilgan mahs. tannarxi (COGS)</td>
+              <td style={{ padding: "0.6rem 0", textAlign: "right", fontWeight: 600, color: "var(--accent-red)" }}>- {fmt(data.totalCOGS)}</td>
             </tr>
             <tr>
-              <td style={{ padding: "0.6rem 0", color: "var(--text-secondary)" }}>— Jami xarajatlar</td>
+              <td style={{ padding: "0.6rem 0", color: "var(--text-secondary)" }}>— Boshqa xarajatlar</td>
               <td style={{ padding: "0.6rem 0", textAlign: "right", fontWeight: 600, color: "var(--accent-red)" }}>- {fmt(data.totalExpenses)}</td>
             </tr>
             <tr style={{ borderTop: "1px solid var(--border)" }}>

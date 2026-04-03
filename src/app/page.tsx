@@ -17,6 +17,8 @@ interface DashboardData {
   stock: { rawStockKg: number; size12Count: number; size14Count: number; size16Count: number };
   supplierDebt: number;
   totalRevenue: number;
+  totalCOGS: number;
+  netProfit: number;
   totalPaid: number;
   customerDebt: number;
   monthlyExpenses: number;
@@ -96,9 +98,9 @@ export default function DashboardPage() {
       href: "/xarajatlar",
     },
     {
-      label: "Jami Daromad",
-      value: fmt(data.totalRevenue),
-      sub: `Tushgan: ${fmt(data.totalPaid)}`,
+      label: "Sof Foyda",
+      value: fmt(data.netProfit),
+      sub: `Tushum: ${fmt(data.totalRevenue)} | Tannarx: ${fmt(data.totalCOGS)}`,
       icon: TrendingUp,
       gradient: "linear-gradient(135deg, #0891b2, #06b6d4)",
       lightBg: "#cffafe",

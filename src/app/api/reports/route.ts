@@ -13,7 +13,7 @@ export async function GET() {
 
   // Total raw material cost
   const rawAgg = await prisma.rawMaterial.aggregate({
-    _sum: { totalAmount: true, paidAmount: true, debtAmount: true },
+    _sum: { totalAmount: true, paidAmount: true, debtAmount: true, weightKg: true },
   });
   const totalRawCost = rawAgg._sum.totalAmount ?? 0;
   const totalSupplierDebt = rawAgg._sum.debtAmount ?? 0;
@@ -53,9 +53,44 @@ export async function GET() {
     });
   }
 
-  // Net profit = collected revenue - raw material cost - expenses
-  const netProfit = totalCollected - totalRawCost - totalExpenses;
-  const grossProfit = totalRevenue - totalRawCost - totalExpenses;
+  // ==============================================
+  // COGS & PROFIT CALCULATION (Method 1)
+  // ==============================================
+  const avgRawPrice =
+    rawAgg._sum.weightKg && rawAgg._sum.totalAmount
+      ? rawAgg._sum.totalAmount / rawAgg._sum.weightKg
+      : 0;
+
+  const prodItemsAgg = await prisma.productionItem.groupBy({
+    by: ["size"],
+    _sum: { count: true, weightGrams: true },
+  });
+  const sizeWeights: Record<number, number> = {};
+  prodItemsAgg.forEach((p) => {
+    if (p._sum.count && p._sum.weightGrams) {
+      sizeWeights[p.size] = p._sum.weightGrams / p._sum.count;
+    }
+  });
+
+  const soldAgg = await prisma.saleItem.groupBy({
+    by: ["size"],
+    _sum: { count: true },
+  });
+
+  let totalCOGS = 0;
+  soldAgg.forEach((s) => {
+    const count = s._sum.count || 0;
+    const weightGram =
+      sizeWeights[s.size] || (s.size === 16 ? 290 : s.size === 14 ? 200 : 150);
+    const costRaw = (weightGram / 1000) * avgRawPrice;
+    const costWage = 150;
+    const costElec = 250;
+    totalCOGS += count * (costRaw + costWage + costElec);
+  });
+
+  // Net profit (Sof foyda)
+  const netProfit = totalRevenue - totalCOGS - totalExpenses;
+  const grossProfit = totalRevenue - totalCOGS;
 
   // Stock
   const stock = await prisma.stockSnapshot.findFirst();
@@ -67,6 +102,7 @@ export async function GET() {
     totalRawCost,
     totalSupplierDebt,
     totalExpenses,
+    totalCOGS,
     netProfit,
     grossProfit,
     expensesByCategory,
