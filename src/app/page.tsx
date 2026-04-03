@@ -108,7 +108,7 @@ export default function DashboardPage() {
       href: "/hisobot",
     },
     {
-      label: "Ta'minotchi Qarzi",
+      label: "Ta'minotchi",
       value: data.supplierDebt < 0 
         ? `+ ${fmt(Math.abs(data.supplierDebt))}` 
         : fmt(data.supplierDebt),
@@ -234,7 +234,7 @@ export default function DashboardPage() {
                     <td className="text-muted">
                       {new Date(sale.date).toLocaleDateString("uz-UZ")}
                     </td>
-                    <td style={{ fontWeight: 700, color: "#0f172a" }}>{fmt(sale.totalAmount)}</td>
+                    <td style={{ fontWeight: 700, color: "var(--text-primary)" }}>{fmt(sale.totalAmount)}</td>
                     <td style={{ color: "var(--accent-green)", fontWeight: 600 }}>{fmt(sale.paidAmount)}</td>
                     <td>
                       {sale.debtAmount > 0 ? (

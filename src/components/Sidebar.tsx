@@ -120,8 +120,8 @@ export default function Sidebar() {
               }}
               onMouseEnter={(e) => {
                 if (!active) {
-                  e.currentTarget.style.background = "#f8fafc";
-                  e.currentTarget.style.color = "#0f172a";
+                  e.currentTarget.style.background = "var(--bg-hover)";
+                  e.currentTarget.style.color = "var(--text-primary)";
                 }
               }}
               onMouseLeave={(e) => {
