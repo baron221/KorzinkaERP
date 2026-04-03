@@ -183,7 +183,7 @@ function CustomerList({ customers, search, setSearch, onDelete }: { customers: C
 
 function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void }) {
   const [sales, setSales] = useState<Array<{
-    id: number; date: string; totalAmount: number; paidAmount: number; debtAmount: number;
+    id: number; date: string; totalAmount: number; paidAmount: number; debtAmount: number; cogs: number; netProfit: number;
     customer: { name: string };
     items: Array<{ size: number; count: number; unitPrice: number }>;
   }>>([]);
@@ -207,6 +207,9 @@ function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void 
             <th>Jami</th>
             <th>To'langan</th>
             <th>Qarz</th>
+            <th>Tannarxi</th>
+            <th>Sof Foyda</th>
+            <th>Amal</th>
           </tr>
         </thead>
         <tbody>
@@ -224,6 +227,8 @@ function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void 
               <td style={{ fontWeight: 700 }}>{fmtAmount(s.totalAmount)}</td>
               <td className="text-green">{fmtAmount(s.paidAmount)}</td>
               <td>{s.debtAmount > 0 ? <span className="badge badge-red">{fmtAmount(s.debtAmount)}</span> : <span className="badge badge-green">✓</span>}</td>
+              <td className="text-muted">{fmtAmount(s.cogs)}</td>
+              <td style={{ fontWeight: 700, color: "var(--accent-cyan)" }}>{fmtAmount(s.netProfit)}</td>
               <td>
                 <button className="btn btn-sm" onClick={() => onDelete("sale", s.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
                   <Trash2 size={16} />

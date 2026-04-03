@@ -11,7 +11,44 @@ export async function GET() {
       },
       orderBy: { date: "desc" },
     });
-    return NextResponse.json(sales);
+
+    // Calculate dynamic unit economics
+    const rawAggForCost = await prisma.rawMaterial.aggregate({
+      _sum: { totalAmount: true, weightKg: true },
+    });
+    const avgRawPrice =
+      rawAggForCost._sum.weightKg && rawAggForCost._sum.totalAmount
+        ? rawAggForCost._sum.totalAmount / rawAggForCost._sum.weightKg
+        : 0;
+
+    const prodItemsAgg = await prisma.productionItem.groupBy({
+      by: ["size"],
+      _sum: { count: true, weightGrams: true },
+    });
+    const sizeWeights: Record<number, number> = {};
+    prodItemsAgg.forEach((p) => {
+      if (p._sum.count && p._sum.weightGrams) {
+        sizeWeights[p.size] = p._sum.weightGrams / p._sum.count;
+      }
+    });
+
+    const salesWithProfit = sales.map((sale) => {
+      let totalCOGS = 0;
+      sale.items.forEach((item) => {
+        const weightGram = sizeWeights[item.size] || (item.size === 16 ? 290 : item.size === 14 ? 200 : 150);
+        const costRaw = (weightGram / 1000) * avgRawPrice;
+        const costWage = 150;
+        const costElec = 250;
+        totalCOGS += item.count * (costRaw + costWage + costElec);
+      });
+      return {
+        ...sale,
+        cogs: totalCOGS,
+        netProfit: sale.totalAmount - totalCOGS,
+      };
+    });
+
+    return NextResponse.json(salesWithProfit);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Server xatosi" }, { status: 500 });

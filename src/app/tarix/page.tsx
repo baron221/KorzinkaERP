@@ -24,6 +24,7 @@ export default function TarixPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setData([]);
     let endpoint = "";
     switch (tab) {
       case "sales": endpoint = "/api/sales"; break;
@@ -66,9 +67,9 @@ export default function TarixPage() {
 
   const filteredData = data.filter((item) => {
     const s = search.toLowerCase();
-    if (tab === "sales") return item.customer?.name.toLowerCase().includes(s);
-    if (tab === "materials") return item.supplier?.name.toLowerCase().includes(s);
-    if (tab === "expenses") return item.category.toLowerCase().includes(s) || (item.notes ?? "").toLowerCase().includes(s);
+    if (tab === "sales") return item.customer?.name?.toLowerCase().includes(s);
+    if (tab === "materials") return item.supplier?.name?.toLowerCase().includes(s);
+    if (tab === "expenses") return item.category?.toLowerCase().includes(s) || (item.notes ?? "").toLowerCase().includes(s);
     if (tab === "production") return (item.notes ?? "").toLowerCase().includes(s);
     return true;
   });
