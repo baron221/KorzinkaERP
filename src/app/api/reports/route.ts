@@ -61,14 +61,23 @@ export async function GET() {
       ? rawAgg._sum.totalAmount / rawAgg._sum.weightKg
       : 0;
 
-  const prodItemsAgg = await prisma.productionItem.groupBy({
-    by: ["size"],
-    _avg: { weightGrams: true },
+  const allProdItems = await prisma.productionItem.findMany({
+    select: { size: true, count: true, weightGrams: true }
   });
+  
+  const sizeStats: Record<number, { totalWeight: number, totalCount: number }> = {};
+  allProdItems.forEach((i) => {
+    if (!sizeStats[i.size]) sizeStats[i.size] = { totalWeight: 0, totalCount: 0 };
+    sizeStats[i.size].totalWeight += i.count * i.weightGrams;
+    sizeStats[i.size].totalCount += i.count;
+  });
+
   const sizeWeights: Record<number, number> = {};
-  prodItemsAgg.forEach((p) => {
-    if (p._avg.weightGrams) {
-      sizeWeights[p.size] = p._avg.weightGrams;
+  Object.keys(sizeStats).forEach((key) => {
+    const size = parseInt(key);
+    const stat = sizeStats[size];
+    if (stat.totalCount > 0) {
+      sizeWeights[size] = stat.totalWeight / stat.totalCount;
     }
   });
 
