@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Package,
   Factory,
@@ -62,6 +63,7 @@ export default function DashboardPage() {
       gradient: "linear-gradient(135deg, #4f46e5, #6366f1)",
       lightBg: "#ede9fe",
       iconColor: "#4f46e5",
+      href: "/ombor",
     },
     {
       label: "Tayyor Mahsulot",
@@ -71,6 +73,7 @@ export default function DashboardPage() {
       gradient: "linear-gradient(135deg, #059669, #10b981)",
       lightBg: "#d1fae5",
       iconColor: "#059669",
+      href: "/ishlab-chiqarish",
     },
     {
       label: "Mijozlar Qarzi",
@@ -80,6 +83,7 @@ export default function DashboardPage() {
       gradient: "linear-gradient(135deg, #d97706, #f59e0b)",
       lightBg: "#fef3c7",
       iconColor: "#d97706",
+      href: "/mijozlar",
     },
     {
       label: "Oylik Xarajat",
@@ -89,6 +93,7 @@ export default function DashboardPage() {
       gradient: "linear-gradient(135deg, #dc2626, #ef4444)",
       lightBg: "#fee2e2",
       iconColor: "#dc2626",
+      href: "/xarajatlar",
     },
     {
       label: "Jami Daromad",
@@ -98,6 +103,7 @@ export default function DashboardPage() {
       gradient: "linear-gradient(135deg, #0891b2, #06b6d4)",
       lightBg: "#cffafe",
       iconColor: "#0891b2",
+      href: "/hisobot",
     },
     {
       label: "Ta'minotchi Qarzi",
@@ -109,6 +115,7 @@ export default function DashboardPage() {
       gradient: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
       lightBg: "#ede9fe",
       iconColor: "#7c3aed",
+      href: "/ombor",
     },
   ];
 
@@ -145,45 +152,46 @@ export default function DashboardPage() {
       {/* KPI cards */}
       <div className="grid-3" style={{ marginBottom: "1.5rem" }}>
         {cards.map((card) => (
-          <div
-            key={card.label}
-            className="stat-card"
-            style={{ position: "relative", overflow: "hidden" }}
-          >
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-              <div>
-                <div className="stat-label">{card.label}</div>
-                <div className="stat-value" style={{ marginTop: "0.3rem" }}>{card.value}</div>
-                <div className="stat-sub" style={{ marginTop: "0.25rem" }}>{card.sub}</div>
+          <Link href={card.href} key={card.label} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+            <div
+              className="stat-card"
+              style={{ position: "relative", overflow: "hidden", cursor: "pointer", height: "100%" }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <div>
+                  <div className="stat-label">{card.label}</div>
+                  <div className="stat-value" style={{ marginTop: "0.3rem" }}>{card.value}</div>
+                  <div className="stat-sub" style={{ marginTop: "0.25rem" }}>{card.sub}</div>
+                </div>
+                <div
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 12,
+                    background: card.lightBg,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <card.icon size={18} color={card.iconColor} />
+                </div>
               </div>
+              {/* Bottom color bar */}
               <div
                 style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 12,
-                  background: card.lightBg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 3,
+                  background: card.gradient,
+                  borderRadius: "0 0 16px 16px",
                 }}
-              >
-                <card.icon size={18} color={card.iconColor} />
-              </div>
+              />
             </div>
-            {/* Bottom color bar */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 3,
-                background: card.gradient,
-                borderRadius: "0 0 16px 16px",
-              }}
-            />
-          </div>
+          </Link>
         ))}
       </div>
 
