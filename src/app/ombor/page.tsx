@@ -638,8 +638,8 @@ export function SupplierDetailsModal({ supplierId, onClose }: { supplierId: numb
               <tr>
                 <th>Sana</th>
                 <th>Turi / Izoh</th>
-                <th style={{ textAlign: "right" }}>Summa (Qarz)</th>
-                <th style={{ textAlign: "right" }}>Yoki To'lov (Avans)</th>
+                <th style={{ textAlign: "right" }}>Kirim (Seryo)</th>
+                <th style={{ textAlign: "right" }}>To'lov</th>
                 <th style={{ textAlign: "right", borderLeft: "1px solid var(--border)" }}>Holat (Qoldiq)</th>
               </tr>
             </thead>

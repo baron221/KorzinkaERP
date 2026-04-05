@@ -26,89 +26,53 @@ export async function POST(req: NextRequest) {
     }
 
     const totalAmount = parseFloat(weightKg) * parseFloat(pricePerKg);
-    const paid = parseFloat(paidAmount) || 0;
-    const debt = totalAmount - paid;
+    let explicitPaid = parseFloat(paidAmount) || 0;
 
     const material = await prisma.$transaction(async (tx) => {
-      // Create the material entry
+      // 1. Calculate the supplier's overall avans dynamically BEFORE this new material
+      const allRaw = await tx.rawMaterial.aggregate({
+        where: { supplierId: parseInt(supplierId) },
+        _sum: { totalAmount: true }
+      });
+      const allPay = await tx.supplierPayment.aggregate({
+        where: { supplierId: parseInt(supplierId) },
+        _sum: { amount: true }
+      });
+      const currentDebt = (allRaw._sum.totalAmount || 0) - (allPay._sum.amount || 0);
+      const availableAvans = currentDebt < 0 ? Math.abs(currentDebt) : 0;
+
+      // 2. Decide how much of this new material can be covered by the existing avans
+      const remainingDebtAfterExplicit = Math.max(0, totalAmount - explicitPaid);
+      const autoCoveredByAvans = Math.min(remainingDebtAfterExplicit, availableAvans);
+      
+      const finalPaidAmount = explicitPaid + autoCoveredByAvans;
+      const finalDebtAmount = totalAmount - finalPaidAmount;
+
+      // 3. Create the material
       const mat = await tx.rawMaterial.create({
         data: {
           supplierId: parseInt(supplierId),
           weightKg: parseFloat(weightKg),
           pricePerKg: parseFloat(pricePerKg),
           totalAmount,
-          paidAmount: paid,
-          debtAmount: debt,
+          paidAmount: finalPaidAmount,
+          debtAmount: finalDebtAmount,
           notes: notes || null,
           date: date ? new Date(date) : new Date(),
         },
       });
 
-      // If user provided a payment during intake, create a payment record
-      if (paid > 0) {
+      // 4. If user provided explicit payment during intake, log it as a real payment (this will cleanly augment the supplier's payment sum later)
+      if (explicitPaid > 0) {
         await tx.supplierPayment.create({
           data: {
             supplierId: mat.supplierId,
             rawMaterialId: mat.id,
-            amount: paid,
+            amount: explicitPaid,
             date: mat.date,
-            notes: "Kirim vaqtidagi to'lov",
+            notes: "Seryo qabul qilingandagi tolov",
           }
         });
-      }
-
-      // Auto-apply any existing prepayments (Avans) for this supplier
-      if (mat.debtAmount > 0) {
-        const prepayments = await tx.supplierPayment.findMany({
-          where: { supplierId: mat.supplierId, rawMaterialId: null },
-          orderBy: { date: "asc" },
-        });
-
-        let remainingDebt = mat.debtAmount;
-        let autoPaidFromAvans = 0;
-
-        for (const pp of prepayments) {
-          if (remainingDebt <= 0) break;
-          const apply = Math.min(pp.amount, remainingDebt);
-          remainingDebt -= apply;
-          autoPaidFromAvans += apply;
-
-          if (apply === pp.amount) {
-            // Used up the whole prepayment piece
-            await tx.supplierPayment.update({
-              where: { id: pp.id },
-              data: { rawMaterialId: mat.id },
-            });
-          } else {
-            // Partially consumed from a larger prepayment
-            // Update the original prepayment to lower its amount
-            await tx.supplierPayment.update({
-              where: { id: pp.id },
-              data: { amount: pp.amount - apply },
-            });
-            // Create a new locked payment specifically attached to this material
-            await tx.supplierPayment.create({
-              data: {
-                supplierId: mat.supplierId,
-                rawMaterialId: mat.id,
-                amount: apply,
-                date: mat.date,
-                notes: "Avans (oldindan to'lov) hisobidan yopildi",
-              }
-            });
-          }
-        }
-
-        // Update the material's paid/debt amounts to reflect avans usage
-        if (autoPaidFromAvans > 0) {
-          await tx.rawMaterial.update({
-            where: { id: mat.id },
-            data: {
-              paidAmount: mat.paidAmount + autoPaidFromAvans,
-              debtAmount: mat.totalAmount - (mat.paidAmount + autoPaidFromAvans),
-            },
-          });
-        }
       }
 
       return tx.rawMaterial.findUnique({ where: { id: mat.id }, include: { supplier: true } });
