@@ -70,13 +70,10 @@ export async function GET(req: NextRequest) {
     });
 
     let expenseFilter = {};
-    if (dateParam) {
-      expenseFilter = dateFilter;
-    } else {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      expenseFilter = { date: { gte: monthStart } };
-    }
+    const refDate = dateParam ? new Date(dateParam) : new Date();
+    const monthStart = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+    const monthEnd = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 1);
+    expenseFilter = { date: { gte: monthStart, lt: monthEnd } };
     const expenseAgg = await prisma.expense.aggregate({
       where: expenseFilter,
       _sum: { amount: true },
@@ -125,9 +122,7 @@ export async function GET(req: NextRequest) {
       const weightGram =
         sizeWeights[s.size] || (s.size === 16 ? 290 : s.size === 14 ? 200 : 150);
       const costRaw = (weightGram / 1000) * avgRawPrice;
-      const costWage = 150;
-      const costElec = 250;
-      totalCOGS += count * (costRaw + costWage + costElec);
+      totalCOGS += count * costRaw;
     });
 
     const totalExpensesForProfit = await prisma.expense.aggregate({
@@ -147,15 +142,6 @@ export async function GET(req: NextRequest) {
       include: { customer: true },
     });
 
-    // Production Extra Costs (Worker + Electricity) based on actual production
-    const prodBatchAgg = await prisma.productionBatch.aggregate({
-      where: dateFilter,
-      _sum: { totalBaskets: true },
-    });
-    const totalBasketsProduced = prodBatchAgg._sum.totalBaskets ?? 0;
-    const workerCost = totalBasketsProduced * 150;
-    const elecCost = totalBasketsProduced * 250;
-
     return NextResponse.json({
       stock: dynamicStock,
       supplierDebt,
@@ -165,8 +151,6 @@ export async function GET(req: NextRequest) {
       totalPaid: filteredSaleAgg._sum.paidAmount ?? 0,
       customerDebt: allDebtAgg._sum.debtAmount ?? 0,
       monthlyExpenses: expenseAgg._sum.amount ?? 0,
-      workerCost,
-      elecCost,
       customerCount: await prisma.customer.count(),
       supplierCount: await prisma.supplier.count(),
       recentSales,

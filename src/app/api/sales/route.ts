@@ -47,9 +47,7 @@ export async function GET() {
       sale.items.forEach((item) => {
         const weightGram = sizeWeights[item.size] || (item.size === 16 ? 290 : item.size === 14 ? 200 : 150);
         const costRaw = (weightGram / 1000) * avgRawPrice;
-        const costWage = 150;
-        const costElec = 250;
-        totalCOGS += item.count * (costRaw + costWage + costElec);
+        totalCOGS += item.count * costRaw;
       });
       return {
         ...sale,

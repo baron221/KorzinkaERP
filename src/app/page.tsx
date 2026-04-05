@@ -22,8 +22,6 @@ interface DashboardData {
   totalPaid: number;
   customerDebt: number;
   monthlyExpenses: number;
-  workerCost: number;
-  elecCost: number;
   customerCount: number;
   supplierCount: number;
   recentSales: Array<{
@@ -101,9 +99,9 @@ export default function DashboardPage() {
       href: "/mijozlar",
     },
     {
-      label: "Kunlik Xarajat",
-      value: fmt(data.monthlyExpenses + data.workerCost + data.elecCost),
-      sub: `Boshqa: ${fmt(data.monthlyExpenses)} | Ishchi: ${fmt(data.workerCost)} | Svet: ${fmt(data.elecCost)}`,
+      label: "Oylik Xarajat",
+      value: fmt(data.monthlyExpenses),
+      sub: "Tanlangan oy uchun",
       icon: Receipt,
       gradient: "linear-gradient(135deg, #dc2626, #ef4444)",
       lightBg: "#fee2e2",

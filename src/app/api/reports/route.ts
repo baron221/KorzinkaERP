@@ -92,9 +92,7 @@ export async function GET() {
     const weightGram =
       sizeWeights[s.size] || (s.size === 16 ? 290 : s.size === 14 ? 200 : 150);
     const costRaw = (weightGram / 1000) * avgRawPrice;
-    const costWage = 150;
-    const costElec = 250;
-    totalCOGS += count * (costRaw + costWage + costElec);
+    totalCOGS += count * costRaw;
   });
 
   // Net profit (Sof foyda)
