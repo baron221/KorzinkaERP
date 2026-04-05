@@ -607,21 +607,44 @@ export function SupplierDetailsModal({ supplierId, onClose }: { supplierId: numb
       });
     });
     data.supplierPayments?.forEach((p: any) => {
-      history.push({
-        type: "payment",
-        id: `p-${p.id}`,
-        date: p.date,
-        createdAt: p.createdAt,
-        amount: p.amount,
-        notes:
-          p.notes && p.notes.includes("Avans (oldindan to'lov) hisobidan")
-            ? "💸 Avtomatik avans yechilishi"
-            : p.notes && p.notes.includes("Kirim vaqtidagi")
-            ? "💸 Seryo kiritilgandagi to'lov"
-            : p.notes || "💸 Qarz to'lovi / Avans kiritilishi",
-      });
+      const isAutoSplit = p.notes && p.notes.includes("Avans (oldindan to'lov) hisobidan");
+
+      if (isAutoSplit) {
+        // Automatically merge legacy split pieces back into a main payment on the same exact day
+        const dateStr = new Date(p.date).toDateString();
+        const parentPayment = history.find(
+          (h) => h.type === "payment" && new Date(h.date).toDateString() === dateStr && !h.isAutoSplit
+        );
+        if (parentPayment) {
+          parentPayment.amount += p.amount; // Reconstruct the original full payment
+        } else {
+          // If no parent found, instantiate it as a reconstructed generic payment
+          history.push({
+            type: "payment",
+            id: `p-${p.id}`,
+            date: p.date,
+            createdAt: p.createdAt,
+            amount: p.amount,
+            notes: "💸 Qarz to'lovi / Avans kiritilishi",
+            isAutoSplit: false,
+          });
+        }
+      } else {
+        history.push({
+          type: "payment",
+          id: `p-${p.id}`,
+          date: p.date,
+          createdAt: p.createdAt,
+          amount: p.amount,
+          notes:
+            p.notes && p.notes.includes("Kirim vaqtidagi")
+              ? "💸 Seryo kiritilgandagi to'lov"
+              : p.notes || "💸 Qarz to'lovi / Avans kiritilishi",
+          isAutoSplit: false,
+        });
+      }
     });
-    // Sort primarily by precise creation time to maintain transaction logic perfectly
+    // Sort primarily by precise creation time so original avans strictly precedes materials of the same day
     history.sort((a, b) => {
       const timeA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
       const timeB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
