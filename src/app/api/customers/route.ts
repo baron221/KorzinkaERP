@@ -7,7 +7,6 @@ export async function GET() {
       include: {
         sales: {
           orderBy: { date: "desc" },
-          take: 3,
           include: { items: true },
         },
       },

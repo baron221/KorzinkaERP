@@ -15,7 +15,7 @@ interface Customer {
   name: string;
   phone: string | null;
   address: string | null;
-  sales: Array<{ totalAmount: number; paidAmount: number; debtAmount: number }>;
+  sales: Array<{ totalAmount: number; paidAmount: number; debtAmount: number; items?: Array<{ size: number; count: number }> }>;
 }
 interface Stock {
   size12Count: number;
@@ -158,11 +158,28 @@ function CustomerList({ customers, search, setSearch, onDelete }: { customers: C
               {customers.map((c) => {
                 const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
                 const totalDebt = c.sales.reduce((s, sale) => s + sale.debtAmount, 0);
+                let r12 = 0, r14 = 0, r16 = 0;
+                c.sales.forEach(sale => {
+                  sale.items?.forEach(item => {
+                    if (item.size === 12) r12 += item.count;
+                    if (item.size === 14) r14 += item.count;
+                    if (item.size === 16) r16 += item.count;
+                  });
+                });
                 return (
                   <tr key={c.id}>
                     <td style={{ fontWeight: 600 }}>{c.name}</td>
                     <td className="text-muted">{c.phone ?? "—"}</td>
-                    <td>{c.sales.length} ta</td>
+                    <td>
+                      <div>{c.sales.length} ta savdo</div>
+                      {(r12 > 0 || r14 > 0 || r16 > 0) && (
+                        <div style={{ fontSize: "0.75rem", marginTop: "0.25rem", display: "flex", gap: "0.25rem", flexWrap: "wrap", alignItems: "center" }}>
+                          {r12 > 0 && <span className="badge" style={{ padding: "0.2rem 0.4rem", background: "var(--bg-secondary)" }}>R12:{r12}</span>}
+                          {r14 > 0 && <span className="badge" style={{ padding: "0.2rem 0.4rem", background: "var(--bg-secondary)" }}>R14:{r14}</span>}
+                          {r16 > 0 && <span className="badge" style={{ padding: "0.2rem 0.4rem", background: "var(--bg-secondary)" }}>R16:{r16}</span>}
+                        </div>
+                      )}
+                    </td>
                     <td>{fmtAmount(totalBuy)}</td>
                     <td>{totalDebt > 0 ? <span className="badge badge-red">{fmtAmount(totalDebt)}</span> : <span className="badge badge-green">✓</span>}</td>
                     <td>

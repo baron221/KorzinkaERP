@@ -116,7 +116,7 @@ export default function OmborPage() {
       ) : tab === "suppliers" ? (
         <SuppliersTable suppliers={suppliers} materials={materials} onDelete={handleDelete} />
       ) : (
-        <PaymentsTable payments={payments} onDelete={handleDelete} />
+        <PaymentsTable payments={payments} materials={materials} onDelete={handleDelete} />
       )}
 
       {/* Add Supplier Modal */}
@@ -285,8 +285,27 @@ function SuppliersTable({ suppliers, materials, onDelete }: { suppliers: Supplie
   );
 }
 
-function PaymentsTable({ payments, onDelete }: { payments: SupplierPayment[]; onDelete: (type: string, id: number) => void }) {
-  if (payments.length === 0)
+function PaymentsTable({ payments, materials, onDelete }: { payments: SupplierPayment[]; materials: RawMaterial[]; onDelete: (type: string, id: number) => void }) {
+  const derivedPayments = materials.map(m => {
+    const linkedPayments = payments.filter((p) => p.rawMaterialId === m.id);
+    const sumLinked = linkedPayments.reduce((s, p) => s + p.amount, 0);
+    const upfrontPayment = m.paidAmount - sumLinked;
+    if (upfrontPayment > 0) {
+      return {
+        id: `upfront-${m.id}`,
+        isUpfront: true,
+        amount: upfrontPayment,
+        date: m.date,
+        notes: "Seryo kirimi vaqtidagi to'lov",
+        supplier: m.supplier
+      };
+    }
+    return null;
+  }).filter(Boolean) as any[];
+
+  const allPayments = [...payments, ...derivedPayments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  if (allPayments.length === 0)
     return (
       <div className="empty-state">
         <div>Hali to'lov kiritilmagan</div>
@@ -301,19 +320,22 @@ function PaymentsTable({ payments, onDelete }: { payments: SupplierPayment[]; on
             <th>Ta'minotchi</th>
             <th>Summa</th>
             <th>Izoh</th>
+            <th>Amal</th>
           </tr>
         </thead>
         <tbody>
-          {payments.map((p) => (
+          {allPayments.map((p) => (
             <tr key={p.id}>
               <td className="text-muted">{new Date(p.date).toLocaleDateString("uz-UZ")}</td>
               <td style={{ fontWeight: 500 }}>{p.supplier.name}</td>
               <td className="text-green" style={{ fontWeight: 700 }}>{fmtAmount(p.amount)}</td>
               <td className="text-muted">{p.notes ?? "—"}</td>
               <td>
-                <button className="btn btn-sm" onClick={() => onDelete("supplier-payment", p.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
-                  <Trash2 size={16} />
-                </button>
+                {!p.isUpfront && (
+                  <button className="btn btn-sm" onClick={() => onDelete("supplier-payment", p.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </td>
             </tr>
           ))}
