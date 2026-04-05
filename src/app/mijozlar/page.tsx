@@ -525,15 +525,63 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
     });
   }, [customerId]);
 
+  let history: any[] = [];
+  if (data) {
+    data.sales?.forEach((s: any) => {
+      // 1. Log the full sale as a debt increase
+      history.push({
+        type: "sale",
+        id: `s-${s.id}`,
+        date: s.date,
+        createdAt: s.createdAt,
+        amount: s.totalAmount, 
+        items: s.items,
+        notes: `🛒 Savdo (Mahsulot berildi)`,
+      });
+      // 2. If they paid something upfront during this sale, log it as an immediate payment
+      if (s.paidAmount > 0) {
+        history.push({
+          type: "payment",
+          id: `sp-${s.id}`, // specific prefix to avoid collision
+          date: s.date,
+          // Give it a fake tiny offset so it securely sorts exactly after the sale itself
+          createdAt: new Date(new Date(s.createdAt).getTime() + 10).toISOString(),
+          amount: s.paidAmount,
+          notes: "💸 Savdo vaqtidagi to'lov",
+        });
+      }
+    });
+    data.customerPayments?.forEach((p: any) => {
+      history.push({
+        type: "payment",
+        id: `p-${p.id}`,
+        date: p.date,
+        createdAt: p.createdAt,
+        amount: p.amount,
+        notes: p.notes || "💸 Qarz to'lovi / Avans olindi",
+      });
+    });
+
+    // Sort chronologically using precise creation time
+    history.sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
+      return timeA - timeB;
+    });
+  }
+
+  let runningBalance = 0;
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 800 }}>
-        <div className="modal-title">
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 800, padding: 0, overflow: "hidden" }}>
+        <div className="modal-title" style={{ padding: "1rem" }}>
           <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <Users size={18} /> Tarix: {data?.name || "Yuklanmoqda..."}
           </span>
           <button className="btn btn-secondary btn-sm" onClick={onClose}><X size={14} /></button>
         </div>
+        
         {loading ? (
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-secondary)" }}>Yuklanmoqda...</div>
         ) : (
@@ -542,40 +590,57 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
               <thead style={{ position: "sticky", top: 0, background: "var(--bg-secondary)", zIndex: 1 }}>
                 <tr>
                   <th>Sana</th>
-                  <th>Xarid (Razmer×Soni×Narx)</th>
-                  <th>Jami Summa</th>
-                  <th>To'langan</th>
-                  <th>Qarz</th>
+                  <th>Amaliyot (Razmerlar)</th>
+                  <th style={{ textAlign: "right" }}>Sotildi (Qarz)</th>
+                  <th style={{ textAlign: "right" }}>To'lov (Keldi)</th>
+                  <th style={{ textAlign: "right", borderLeft: "1px solid var(--border)" }}>Holat (Qoldiq)</th>
                 </tr>
               </thead>
               <tbody>
-                {data?.sales?.length === 0 ? (
-                  <tr><td colSpan={5} style={{ textAlign: "center", padding: "2rem" }}>Hali xarid qilmagan</td></tr>
+                {history.length === 0 ? (
+                  <tr><td colSpan={5} style={{ textAlign: "center", padding: "2rem" }}>Hali o'zaro oldi-berdi yo'q</td></tr>
                 ) : (
-                  data?.sales?.map((s: any) => (
-                    <tr key={s.id}>
-                      <td className="text-muted">{new Date(s.date).toLocaleDateString("uz-UZ")}</td>
-                      <td>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                          {s.items?.map((item: any, i: number) => (
-                            <div key={i} style={{ fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                              <span className="badge badge-blue">R{item.size}</span>
-                              <span style={{ fontWeight: 500 }}>{item.count} ta</span>
-                              <span className="text-muted">× {fmtAmount(item.unitPrice)}</span>
+                  history.map((h) => {
+                    if (h.type === "sale") runningBalance += h.amount;
+                    else runningBalance -= h.amount;
+
+                    return (
+                      <tr key={h.id}>
+                        <td className="text-muted">{new Date(h.date).toLocaleDateString("uz-UZ")}</td>
+                        <td>
+                          <div style={{ color: h.type === "payment" ? "var(--accent-green)" : "inherit", marginBottom: h.items ? "0.25rem" : "0" }}>
+                            {h.notes}
+                          </div>
+                          {h.items && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                              {h.items.map((item: any, i: number) => (
+                                <div key={i} style={{ fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                  <span className="badge badge-blue">R{item.size}</span>
+                                  <span style={{ fontWeight: 500 }}>{item.count} ta</span>
+                                  <span className="text-muted">× {fmtAmount(item.unitPrice)}</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{fmtAmount(s.totalAmount)}</td>
-                      <td className="text-green">{fmtAmount(s.paidAmount)}</td>
-                      <td>
-                        {s.debtAmount > 0 
-                          ? <span className="badge badge-red">{fmtAmount(s.debtAmount)}</span> 
-                          : <span className="badge badge-green">✓</span>
-                        }
-                      </td>
-                    </tr>
-                  ))
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right", fontWeight: h.type === "sale" ? 600 : 400 }}>
+                          {h.type === "sale" ? fmtAmount(h.amount) : "—"}
+                        </td>
+                        <td style={{ textAlign: "right", fontWeight: h.type === "payment" ? 600 : 400, color: h.type === "payment" ? "var(--accent-green)" : "inherit" }}>
+                          {h.type === "payment" ? `+ ${fmtAmount(h.amount)}` : "—"}
+                        </td>
+                        <td style={{ textAlign: "right", borderLeft: "1px solid var(--border)", fontWeight: 700 }}>
+                          {runningBalance > 0 ? (
+                            <span className="badge badge-red">Qarz: {fmtAmount(runningBalance)}</span>
+                          ) : runningBalance < 0 ? (
+                            <span className="badge badge-green">Avans (Sizda): {fmtAmount(Math.abs(runningBalance))}</span>
+                          ) : (
+                            <span className="badge" style={{ background: "var(--bg-secondary)" }}>Nol (0)</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
