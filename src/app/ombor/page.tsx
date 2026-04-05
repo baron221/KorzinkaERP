@@ -559,3 +559,130 @@ function AddPaymentModal({ suppliers, materials, onClose, onSuccess }: { supplie
     </div>
   );
 }
+
+export function SupplierDetailsModal({ supplierId, onClose }: { supplierId: number; onClose: () => void }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/suppliers/${supplierId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setData(d);
+        setLoading(false);
+      });
+  }, [supplierId]);
+
+  if (!data && loading) {
+    return (
+      <div className="modal-backdrop" onClick={onClose}>
+        <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 800 }}>
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-secondary)" }}>Yuklanmoqda...</div>
+        </div>
+      </div>
+    );
+  }
+
+  let history: any[] = [];
+  if (data) {
+    data.rawMaterials?.forEach((m: any) => {
+      history.push({
+        type: "material",
+        id: `m-${m.id}`,
+        date: m.date,
+        amount: m.totalAmount,
+        notes: `📦 Seryo kirimi (${fmtWeight(m.weightKg)} × ${fmtAmount(m.pricePerKg)})`,
+      });
+    });
+    data.supplierPayments?.forEach((p: any) => {
+      history.push({
+        type: "payment",
+        id: `p-${p.id}`,
+        date: p.date,
+        amount: p.amount,
+        notes:
+          p.notes && p.notes.includes("Kirim vaqtidagi")
+            ? "💸 Seryo kiritilgandagi to'lov"
+            : p.notes || "💸 Qarz to'lovi / Avans kiritilishi",
+      });
+    });
+    history.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }
+
+  let runningBalance = 0;
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 800, padding: 0, overflow: "hidden" }}>
+        <div className="modal-title" style={{ padding: "1rem" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Truck size={18} /> Tarix: {data?.name || "Yuklanmoqda..."}
+          </span>
+          <button className="btn btn-secondary btn-sm" onClick={onClose}>
+            <X size={14} />
+          </button>
+        </div>
+
+        <div className="table-wrapper" style={{ maxHeight: "65vh", overflowY: "auto", margin: 0 }}>
+          <table style={{ width: "100%", textAlign: "left" }}>
+            <thead style={{ position: "sticky", top: 0, background: "var(--bg-secondary)", zIndex: 1 }}>
+              <tr>
+                <th>Sana</th>
+                <th>Turi / Izoh</th>
+                <th style={{ textAlign: "right" }}>Summa (Qarz)</th>
+                <th style={{ textAlign: "right" }}>Yoki To'lov (Avans)</th>
+                <th style={{ textAlign: "right", borderLeft: "1px solid var(--border)" }}>Holat (Qoldiq)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: "center", padding: "2rem" }}>
+                    Hali o'zaro oldi-berdi yo'q
+                  </td>
+                </tr>
+              ) : (
+                history.map((h) => {
+                  if (h.type === "material") {
+                    runningBalance += h.amount;
+                  } else {
+                    runningBalance -= h.amount;
+                  }
+                  return (
+                    <tr key={h.id}>
+                      <td className="text-muted">{new Date(h.date).toLocaleDateString("uz-UZ")}</td>
+                      <td>
+                        <span style={{ color: h.type === "payment" ? "var(--accent-green)" : "inherit" }}>{h.notes}</span>
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: h.type === "material" ? 600 : 400 }}>
+                        {h.type === "material" ? fmtAmount(h.amount) : "—"}
+                      </td>
+                      <td
+                        style={{
+                          textAlign: "right",
+                          fontWeight: h.type === "payment" ? 600 : 400,
+                          color: h.type === "payment" ? "var(--accent-green)" : "inherit",
+                        }}
+                      >
+                        {h.type === "payment" ? `+ ${fmtAmount(h.amount)}` : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", borderLeft: "1px solid var(--border)", fontWeight: 700 }}>
+                        {runningBalance > 0 ? (
+                          <span className="badge badge-red">Qarz: {fmtAmount(runningBalance)}</span>
+                        ) : runningBalance < 0 ? (
+                          <span className="badge badge-green">Avans: {fmtAmount(Math.abs(runningBalance))}</span>
+                        ) : (
+                          <span className="badge" style={{ background: "var(--bg-secondary)" }}>Nol (0)</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
