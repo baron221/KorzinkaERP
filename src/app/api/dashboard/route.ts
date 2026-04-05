@@ -151,6 +151,19 @@ export async function GET(req: NextRequest) {
       include: { customer: true },
     });
 
+    const suppliers = await prisma.supplier.findMany({
+      include: {
+        rawMaterials: true,
+        supplierPayments: true,
+      }
+    });
+
+    const supplierBalances = suppliers.map(s => {
+      const totalRaw = s.rawMaterials.reduce((sum, r) => sum + r.totalAmount, 0);
+      const totalPay = s.supplierPayments.reduce((sum, p) => sum + p.amount, 0);
+      return { id: s.id, name: s.name, balance: totalRaw - totalPay };
+    }).filter(s => s.balance !== 0).sort((a, b) => a.balance - b.balance);
+
     return NextResponse.json({
       stock: dynamicStock,
       supplierDebt,
@@ -162,6 +175,7 @@ export async function GET(req: NextRequest) {
       monthlyExpenses: expenseAgg._sum.amount ?? 0,
       deductedExpenses: totalExpAmount,
       expenseBreakdown,
+      supplierBalances,
       customerCount: await prisma.customer.count(),
       supplierCount: await prisma.supplier.count(),
       recentSales,

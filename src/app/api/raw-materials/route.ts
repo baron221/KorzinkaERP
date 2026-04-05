@@ -44,7 +44,20 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Auto-apply any existing prepayments (unlinked payments) for this supplier — FIFO
+      // If user provided a payment during intake, create a payment record
+      if (paid > 0) {
+        await tx.supplierPayment.create({
+          data: {
+            supplierId: mat.supplierId,
+            rawMaterialId: mat.id,
+            amount: paid,
+            date: mat.date,
+            notes: "Kirim vaqtidagi to'lov",
+          }
+        });
+      }
+
+      // Auto-apply any existing prepayments (Avans) for this supplier
       if (mat.debtAmount > 0) {
         const prepayments = await tx.supplierPayment.findMany({
           where: { supplierId: mat.supplierId, rawMaterialId: null },
@@ -52,31 +65,53 @@ export async function POST(req: NextRequest) {
         });
 
         let remainingDebt = mat.debtAmount;
+        let autoPaidFromAvans = 0;
+
         for (const pp of prepayments) {
           if (remainingDebt <= 0) break;
           const apply = Math.min(pp.amount, remainingDebt);
           remainingDebt -= apply;
+          autoPaidFromAvans += apply;
 
-          // Link this prepayment to the new material
-          await tx.supplierPayment.update({
-            where: { id: pp.id },
-            data: { rawMaterialId: mat.id },
-          });
+          if (apply === pp.amount) {
+            // Used up the whole prepayment piece
+            await tx.supplierPayment.update({
+              where: { id: pp.id },
+              data: { rawMaterialId: mat.id },
+            });
+          } else {
+            // Partially consumed from a larger prepayment
+            // Update the original prepayment to lower its amount
+            await tx.supplierPayment.update({
+              where: { id: pp.id },
+              data: { amount: pp.amount - apply },
+            });
+            // Create a new locked payment specifically attached to this material
+            await tx.supplierPayment.create({
+              data: {
+                supplierId: mat.supplierId,
+                rawMaterialId: mat.id,
+                amount: apply,
+                date: mat.date,
+                notes: "Avans (oldindan to'lov) hisobidan yopildi",
+              }
+            });
+          }
         }
 
-        // Update the material's paid/debt amounts
-        if (remainingDebt < mat.debtAmount) {
+        // Update the material's paid/debt amounts to reflect avans usage
+        if (autoPaidFromAvans > 0) {
           await tx.rawMaterial.update({
             where: { id: mat.id },
             data: {
-              paidAmount: totalAmount - remainingDebt,
-              debtAmount: Math.max(0, remainingDebt),
+              paidAmount: mat.paidAmount + autoPaidFromAvans,
+              debtAmount: mat.totalAmount - (mat.paidAmount + autoPaidFromAvans),
             },
           });
         }
       }
 
-      return tx.rawMaterial.findUnique({ where: { id: mat.id } });
+      return tx.rawMaterial.findUnique({ where: { id: mat.id }, include: { supplier: true } });
     });
 
     return NextResponse.json(material, { status: 201 });
