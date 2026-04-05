@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Fragment } from "react";
 import { Plus, X, ChevronDown, ChevronUp, Truck, Package, UserPlus, CreditCard, Trash2 } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
 import NumericInput from "@/components/NumericInput";
@@ -299,6 +299,8 @@ function SuppliersTable({ suppliers, materials, onDelete, onSelectSupplier }: { 
 }
 
 function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { payments: SupplierPayment[]; materials: RawMaterial[]; onDelete: (type: string, id: number) => void; onSelectSupplier: (id: number) => void }) {
+  const [expandedSupplier, setExpandedSupplier] = useState<number | null>(null);
+
   const derivedPayments = materials.map((m) => {
     // Only derive payment differences if there's an actual unrecorded upfront
     const linkedPayments = payments.filter((p) => p.rawMaterialId === m.id);
@@ -328,40 +330,89 @@ function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { pa
         <div>Hali to'lov kiritilmagan</div>
       </div>
     );
+
+  const grouped = allPayments.reduce((acc, p) => {
+    if (!acc[p.supplier.id]) {
+      acc[p.supplier.id] = { supplier: p.supplier, total: 0, count: 0, payments: [] };
+    }
+    acc[p.supplier.id].total += p.amount;
+    acc[p.supplier.id].count += 1;
+    acc[p.supplier.id].payments.push(p);
+    return acc;
+  }, {} as Record<number, { supplier: any, total: number, count: number, payments: any[] }>);
+
+  const groupArray = (Object.values(grouped) as { supplier: any, total: number, count: number, payments: any[] }[]).sort((a, b) => b.total - a.total);
+
   return (
     <div className="table-wrapper">
       <table>
         <thead>
           <tr>
-            <th>Sana</th>
+            <th style={{ width: "40px" }}></th>
             <th>Ta'minotchi</th>
-            <th>Summa</th>
-            <th>Izoh</th>
-            <th>Amal</th>
+            <th>To'lovlar soni</th>
+            <th>Umumiy summa</th>
+            <th style={{ textAlign: "right" }}>Amal</th>
           </tr>
         </thead>
         <tbody>
-          {allPayments.map((p) => (
-            <tr key={p.id}>
-              <td className="text-muted">{new Date(p.date).toLocaleDateString("uz-UZ")}</td>
-              <td style={{ fontWeight: 500 }}>
-                <span 
-                  style={{ textDecoration: "underline", color: "var(--accent-primary)", cursor: "pointer" }}
-                  onClick={(e) => { e.stopPropagation(); onSelectSupplier(p.supplier.id); }}
-                >
-                  {p.supplier.name}
-                </span>
-              </td>
-              <td className="text-green" style={{ fontWeight: 700 }}>{fmtAmount(p.amount)}</td>
-              <td className="text-muted">{p.notes ?? "—"}</td>
-              <td>
-                {!p.isUpfront && (
-                  <button className="btn btn-sm" onClick={() => onDelete("supplier-payment", p.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
-                    <Trash2 size={16} />
+          {groupArray.map((g: { supplier: any, total: number, count: number, payments: any[] }) => (
+            <Fragment key={g.supplier.id}>
+              <tr 
+                onClick={() => setExpandedSupplier(expandedSupplier === g.supplier.id ? null : g.supplier.id)}
+                style={{ cursor: "pointer", background: expandedSupplier === g.supplier.id ? "var(--bg-secondary)" : "transparent" }}
+              >
+                <td>
+                  {expandedSupplier === g.supplier.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </td>
+                <td style={{ fontWeight: 600 }}>{g.supplier.name}</td>
+                <td className="text-muted">{g.count} marta to'lov</td>
+                <td className="text-green" style={{ fontWeight: 700 }}>{fmtAmount(g.total)}</td>
+                <td style={{ textAlign: "right" }}>
+                  <button 
+                    className="btn btn-sm btn-secondary" 
+                    onClick={(e) => { e.stopPropagation(); onSelectSupplier(g.supplier.id); }}
+                    style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}
+                  >
+                    Tarixni ko'rish
                   </button>
-                )}
-              </td>
-            </tr>
+                </td>
+              </tr>
+              {expandedSupplier === g.supplier.id && (
+                <tr>
+                  <td colSpan={5} style={{ padding: 0, borderBottom: "1px solid var(--border)" }}>
+                    <div style={{ background: "rgba(0,0,0,0.02)", padding: "1rem" }}>
+                      <table style={{ background: "var(--bg-primary)", margin: 0, borderRadius: 8, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+                        <thead style={{ background: "var(--bg-secondary)" }}>
+                          <tr>
+                            <th style={{ fontSize: "0.75rem", padding: "0.5rem 1rem" }}>Sana</th>
+                            <th style={{ fontSize: "0.75rem", padding: "0.5rem 1rem" }}>Summa</th>
+                            <th style={{ fontSize: "0.75rem", padding: "0.5rem 1rem" }}>Izoh</th>
+                            <th style={{ fontSize: "0.75rem", padding: "0.5rem 1rem" }}>Amal</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {g.payments.map((p: any) => (
+                            <tr key={p.id}>
+                              <td className="text-muted" style={{ padding: "0.5rem 1rem" }}>{new Date(p.date).toLocaleDateString("uz-UZ")}</td>
+                              <td className="text-green" style={{ fontWeight: 600, padding: "0.5rem 1rem" }}>{fmtAmount(p.amount)}</td>
+                              <td className="text-muted" style={{ fontSize: "0.85rem", padding: "0.5rem 1rem" }}>{p.notes ?? "—"}</td>
+                              <td style={{ padding: "0.5rem 1rem" }}>
+                                {!p.isUpfront && (
+                                  <button className="btn btn-sm" onClick={() => onDelete("supplier-payment", p.id)} style={{ color: "var(--accent-red)", padding: "0.3rem" }}>
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </Fragment>
           ))}
         </tbody>
       </table>
