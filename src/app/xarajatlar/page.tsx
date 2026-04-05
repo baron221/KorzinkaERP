@@ -36,7 +36,7 @@ export default function XarajatlarPage() {
 
   const loadAll = useCallback(async () => {
     setLoading(true);
-    const data = await fetch(`/api/expenses?month=${month}`).then((r) => r.json());
+    const data = await fetch(`/api/expenses?month=${month}&t=${Date.now()}`).then((r) => r.json());
     setExpenses(data.expenses);
     setTotal(data.total);
     setByCategory(data.byCategory);

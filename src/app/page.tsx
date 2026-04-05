@@ -55,7 +55,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/dashboard?date=${selectedDate}`)
+    fetch(`/api/dashboard?date=${selectedDate}&t=${Date.now()}`)
       .then((r) => r.json())
       .then((d) => { setData(d); setLoading(false); });
   }, [selectedDate]);

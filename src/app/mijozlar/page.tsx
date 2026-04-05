@@ -514,7 +514,7 @@ function AddPaymentModal({ customers, onClose, onSuccess }: {
   );
 }
 
-function CustomerDetailsModal({ customerId, onClose }: { customerId: number; onClose: () => void }) {
+export function CustomerDetailsModal({ customerId, onClose }: { customerId: number; onClose: () => void }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

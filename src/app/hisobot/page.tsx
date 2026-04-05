@@ -62,7 +62,7 @@ export default function HisobotPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/reports").then((r) => r.json()).then((d) => { setData(d); setLoading(false); });
+    fetch(`/api/reports?t=${Date.now()}`).then((r) => r.json()).then((d) => { setData(d); setLoading(false); });
   }, []);
 
   if (loading) return <div style={{ color: "var(--text-secondary)", textAlign: "center", padding: "3rem" }}>Yuklanmoqda...</div>;
@@ -120,7 +120,7 @@ export default function HisobotPage() {
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>Brutto foyda</div>
+          <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>Xarajatlarsiz foyda</div>
           <div style={{ fontSize: "1.2rem", fontWeight: 700, color: data.grossProfit >= 0 ? "var(--accent-green)" : "var(--accent-red)" }}>
             {fmt(data.grossProfit)}
           </div>
@@ -224,7 +224,7 @@ export default function HisobotPage() {
               <td style={{ padding: "0.6rem 0", textAlign: "right", fontWeight: 600, color: "var(--accent-red)" }}>- {fmt(data.totalExpenses)}</td>
             </tr>
             <tr style={{ borderTop: "1px solid var(--border)" }}>
-              <td style={{ padding: "0.75rem 0", fontWeight: 700 }}>Brutto Foyda / Zarar</td>
+              <td style={{ padding: "0.75rem 0", fontWeight: 700 }}>Xarajatlarsiz foyda / zarar</td>
               <td style={{ padding: "0.75rem 0", textAlign: "right", fontWeight: 800, color: data.grossProfit >= 0 ? "var(--accent-green)" : "var(--accent-red)" }}>
                 {fmt(data.grossProfit)}
               </td>

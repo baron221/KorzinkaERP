@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { fmtAmount, fmtWeight } from "@/lib/utils";
 import { useToast } from "@/components/ToastContext";
+import { CustomerDetailsModal } from "@/app/mijozlar/page";
 
 type HistoryTab = "sales" | "production" | "materials" | "expenses";
 
@@ -28,6 +29,7 @@ export default function TarixPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [expandedSale, setExpandedSale] = useState<number | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const { showToast } = useToast();
 
   const loadData = useCallback(async () => {
@@ -190,7 +192,15 @@ export default function TarixPage() {
                     
                     {tab === "sales" && (
                       <>
-                        <td style={{ fontWeight: 600, color: "var(--accent-primary)" }}>{item.customer?.name}</td>
+                        <td 
+                          style={{ fontWeight: 600, color: "var(--accent-primary)", textDecoration: "underline" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCustomerId(item.customer?.id);
+                          }}
+                        >
+                          {item.customer?.name}
+                        </td>
                         <td style={{ fontWeight: 700 }}>{fmtAmount(item.totalAmount)}</td>
                         <td className="text-green">{fmtAmount(item.paidAmount)}</td>
                         <td>
@@ -274,6 +284,10 @@ export default function TarixPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedCustomerId && (
+        <CustomerDetailsModal customerId={selectedCustomerId} onClose={() => setSelectedCustomerId(null)} />
       )}
     </div>
   );
