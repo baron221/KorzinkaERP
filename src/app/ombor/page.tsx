@@ -117,7 +117,7 @@ export default function OmborPage() {
       ) : tab === "suppliers" ? (
         <SuppliersTable suppliers={suppliers} materials={materials} onDelete={handleDelete} onSelectSupplier={setSelectedSupplierId} />
       ) : (
-        <PaymentsTable payments={payments} materials={materials} onDelete={handleDelete} />
+        <PaymentsTable payments={payments} materials={materials} onDelete={handleDelete} onSelectSupplier={setSelectedSupplierId} />
       )}
 
       {/* Add Supplier Modal */}
@@ -298,8 +298,9 @@ function SuppliersTable({ suppliers, materials, onDelete, onSelectSupplier }: { 
   );
 }
 
-function PaymentsTable({ payments, materials, onDelete }: { payments: SupplierPayment[]; materials: RawMaterial[]; onDelete: (type: string, id: number) => void }) {
-  const derivedPayments = materials.map(m => {
+function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { payments: SupplierPayment[]; materials: RawMaterial[]; onDelete: (type: string, id: number) => void; onSelectSupplier: (id: number) => void }) {
+  const derivedPayments = materials.map((m) => {
+    // Only derive payment differences if there's an actual unrecorded upfront
     const linkedPayments = payments.filter((p) => p.rawMaterialId === m.id);
     const sumLinked = linkedPayments.reduce((s, p) => s + p.amount, 0);
     const upfrontPayment = m.paidAmount - sumLinked;
@@ -309,14 +310,17 @@ function PaymentsTable({ payments, materials, onDelete }: { payments: SupplierPa
         isUpfront: true,
         amount: upfrontPayment,
         date: m.date,
-        notes: "Seryo kirimi vaqtidagi to'lov",
-        supplier: m.supplier
+        notes: "Seryo qabul qilingandagi to'lov",
+        supplier: m.supplier,
       };
     }
     return null;
   }).filter(Boolean) as any[];
 
-  const allPayments = [...payments, ...derivedPayments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Filter out internal fake splits that just clutter the UI
+  const allPayments = [...payments, ...derivedPayments]
+    .filter((p) => !p.notes?.includes("Avans (oldindan to'lov) hisobidan yopildi"))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   if (allPayments.length === 0)
     return (
@@ -340,7 +344,14 @@ function PaymentsTable({ payments, materials, onDelete }: { payments: SupplierPa
           {allPayments.map((p) => (
             <tr key={p.id}>
               <td className="text-muted">{new Date(p.date).toLocaleDateString("uz-UZ")}</td>
-              <td style={{ fontWeight: 500 }}>{p.supplier.name}</td>
+              <td style={{ fontWeight: 500 }}>
+                <span 
+                  style={{ textDecoration: "underline", color: "var(--accent-primary)", cursor: "pointer" }}
+                  onClick={(e) => { e.stopPropagation(); onSelectSupplier(p.supplier.id); }}
+                >
+                  {p.supplier.name}
+                </span>
+              </td>
               <td className="text-green" style={{ fontWeight: 700 }}>{fmtAmount(p.amount)}</td>
               <td className="text-muted">{p.notes ?? "—"}</td>
               <td>
