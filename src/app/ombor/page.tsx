@@ -590,6 +590,7 @@ export function SupplierDetailsModal({ supplierId, onClose }: { supplierId: numb
         type: "material",
         id: `m-${m.id}`,
         date: m.date,
+        createdAt: m.createdAt,
         amount: m.totalAmount,
         notes: `📦 Seryo kirimi (${fmtWeight(m.weightKg)} × ${fmtAmount(m.pricePerKg)})`,
       });
@@ -599,14 +600,22 @@ export function SupplierDetailsModal({ supplierId, onClose }: { supplierId: numb
         type: "payment",
         id: `p-${p.id}`,
         date: p.date,
+        createdAt: p.createdAt,
         amount: p.amount,
         notes:
-          p.notes && p.notes.includes("Kirim vaqtidagi")
+          p.notes && p.notes.includes("Avans (oldindan to'lov) hisobidan")
+            ? "💸 Avtomatik avans yechilishi"
+            : p.notes && p.notes.includes("Kirim vaqtidagi")
             ? "💸 Seryo kiritilgandagi to'lov"
             : p.notes || "💸 Qarz to'lovi / Avans kiritilishi",
       });
     });
-    history.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Sort primarily by precise creation time to maintain transaction logic perfectly
+    history.sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
+      return timeA - timeB;
+    });
   }
 
   let runningBalance = 0;
