@@ -269,17 +269,17 @@ export default function DashboardPage() {
               <tbody>
                 {data.recentSales.map((sale) => (
                   <tr key={sale.id}>
-                    <td style={{ fontWeight: 600 }}>{sale.customer.name}</td>
-                    <td className="text-muted">
+                    <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{sale.customer.name}</td>
+                    <td className="text-muted" style={{ whiteSpace: "nowrap" }}>
                       {new Date(sale.date).toLocaleDateString("uz-UZ")}
                     </td>
-                    <td style={{ fontWeight: 700, color: "var(--text-primary)" }}>{fmt(sale.totalAmount)}</td>
-                    <td style={{ color: "var(--accent-green)", fontWeight: 600 }}>{fmt(sale.paidAmount)}</td>
-                    <td>
+                    <td style={{ fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap" }}>{fmt(sale.totalAmount)}</td>
+                    <td style={{ color: "var(--accent-green)", fontWeight: 600, whiteSpace: "nowrap" }}>{fmt(sale.paidAmount)}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>
                       {sale.debtAmount > 0 ? (
-                        <span className="badge badge-red">{fmt(sale.debtAmount)} qarz</span>
+                        <span className="badge badge-red" style={{ whiteSpace: "nowrap", display: "inline-block" }}>{fmt(sale.debtAmount)} qarz</span>
                       ) : (
-                        <span className="badge badge-green">✓ To'liq</span>
+                        <span className="badge badge-green" style={{ whiteSpace: "nowrap", display: "inline-block" }}>✓ To'liq</span>
                       )}
                     </td>
                   </tr>
@@ -311,24 +311,24 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="table-wrapper">
-              <table>
+              <table style={{ minWidth: "100%" }}>
                 <thead>
                   <tr>
-                    <th>Ta'minotchi</th>
-                    <th style={{ textAlign: "right" }}>Holati</th>
+                    <th style={{ whiteSpace: "nowrap" }}>Ta'minotchi</th>
+                    <th style={{ textAlign: "right", whiteSpace: "nowrap" }}>Holati</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.supplierBalances.map(s => (
                     <tr key={s.id}>
-                      <td style={{ fontWeight: 600 }}>{s.name}</td>
-                      <td style={{ textAlign: "right" }}>
+                      <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{s.name}</td>
+                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                         {s.balance < 0 ? (
-                          <span className="badge badge-green">
+                          <span className="badge badge-green" style={{ whiteSpace: "nowrap", display: "inline-block" }}>
                             Avans: {fmt(Math.abs(s.balance))}
                           </span>
                         ) : (
-                          <span className="badge badge-red">
+                          <span className="badge badge-red" style={{ whiteSpace: "nowrap", display: "inline-block" }}>
                             Qarz: {fmt(s.balance)}
                           </span>
                         )}
