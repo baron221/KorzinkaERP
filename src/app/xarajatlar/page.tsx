@@ -148,7 +148,7 @@ export default function XarajatlarPage() {
 }
 
 function AddExpenseModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState({ category: "ELECTRICITY", amount: "", notes: "", date: new Date().toISOString().slice(0, 7) });
+  const [form, setForm] = useState({ category: "ELECTRICITY", amount: "", notes: "", date: new Date().toISOString().slice(0, 10) });
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
 

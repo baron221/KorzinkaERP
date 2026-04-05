@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { 
   ShoppingCart, 
   Factory, 
@@ -15,11 +15,19 @@ import { useToast } from "@/components/ToastContext";
 
 type HistoryTab = "sales" | "production" | "materials" | "expenses";
 
+const CATEGORIES: Record<string, { label: string; emoji: string }> = {
+  ELECTRICITY: { label: "Elektr energiya", emoji: "⚡" },
+  WAGES: { label: "Ishchilar oyligi", emoji: "👷" },
+  FOOD: { label: "Ovqatlanish", emoji: "🍱" },
+  MISC: { label: "Mayda xarajatlar", emoji: "📎" },
+};
+
 export default function TarixPage() {
   const [tab, setTab] = useState<HistoryTab>("sales");
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [expandedSale, setExpandedSale] = useState<number | null>(null);
   const { showToast } = useToast();
 
   const loadData = useCallback(async () => {
@@ -169,69 +177,99 @@ export default function TarixPage() {
             </thead>
             <tbody>
               {filteredData.map((item) => (
-                <tr key={item.id}>
-                  <td className="text-muted">{new Date(item.date).toLocaleDateString("uz-UZ")}</td>
+                <React.Fragment key={item.id}>
+                  <tr 
+                    style={{ cursor: tab === "sales" ? "pointer" : "default" }}
+                    onClick={() => {
+                      if (tab === "sales") {
+                        setExpandedSale(expandedSale === item.id ? null : item.id);
+                      }
+                    }}
+                  >
+                    <td className="text-muted">{new Date(item.date).toLocaleDateString("uz-UZ")}</td>
+                    
+                    {tab === "sales" && (
+                      <>
+                        <td style={{ fontWeight: 600, color: "var(--accent-primary)" }}>{item.customer?.name}</td>
+                        <td style={{ fontWeight: 700 }}>{fmtAmount(item.totalAmount)}</td>
+                        <td className="text-green">{fmtAmount(item.paidAmount)}</td>
+                        <td>
+                          {item.debtAmount > 0 ? (
+                            <span className="badge badge-red">{fmtAmount(item.debtAmount)}</span>
+                          ) : (
+                            <span className="badge badge-green">To'liq</span>
+                          )}
+                        </td>
+                        <td>
+                          <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); handleDelete("sale", item.id); }} style={{ color: "var(--accent-red)" }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </>
+                    )}
+
+                    {tab === "production" && (
+                      <>
+                        <td style={{ fontWeight: 600 }}>{fmtWeight(item.rawUsedKg)}</td>
+                        <td style={{ fontWeight: 700, color: "var(--accent-primary)" }}>{item.totalBaskets} ta</td>
+                        <td className="text-muted">{item.notes ?? "—"}</td>
+                        <td>
+                          <button className="btn btn-sm" onClick={() => handleDelete("production", item.id)} style={{ color: "var(--accent-red)" }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </>
+                    )}
+
+                    {tab === "materials" && (
+                      <>
+                        <td style={{ fontWeight: 600 }}>{item.supplier?.name}</td>
+                        <td>{fmtWeight(item.weightKg)}</td>
+                        <td style={{ fontWeight: 700 }}>{fmtAmount(item.totalAmount)}</td>
+                        <td className="text-green">{fmtAmount(item.paidAmount)}</td>
+                        <td>
+                          <button className="btn btn-sm" onClick={() => handleDelete("raw", item.id)} style={{ color: "var(--accent-red)" }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </>
+                    )}
+
+                    {tab === "expenses" && (
+                      <>
+                        <td>
+                          <span className="badge" style={{ background: "var(--bg-secondary)" }}>
+                            {CATEGORIES[item.category]?.emoji} {CATEGORIES[item.category]?.label || item.category}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: 700, color: "var(--accent-red)" }}>{fmtAmount(item.amount)}</td>
+                        <td className="text-muted">{item.notes ?? "—"}</td>
+                        <td>
+                          <button className="btn btn-sm" onClick={() => handleDelete("expense", item.id)} style={{ color: "var(--accent-red)" }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
                   
-                  {tab === "sales" && (
-                    <>
-                      <td style={{ fontWeight: 600 }}>{item.customer?.name}</td>
-                      <td style={{ fontWeight: 700 }}>{fmtAmount(item.totalAmount)}</td>
-                      <td className="text-green">{fmtAmount(item.paidAmount)}</td>
-                      <td>
-                        {item.debtAmount > 0 ? (
-                          <span className="badge badge-red">{fmtAmount(item.debtAmount)}</span>
-                        ) : (
-                          <span className="badge badge-green">To'liq</span>
-                        )}
+                  {tab === "sales" && expandedSale === item.id && (
+                    <tr style={{ background: "var(--bg-secondary)" }}>
+                      <td colSpan={6} style={{ padding: "1rem" }}>
+                        <div style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.5rem" }}>Xarid ma'lumotlari:</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                          {item.items?.map((prod: any, idx: number) => (
+                            <div key={idx} style={{ display: "flex", gap: "1rem" }}>
+                              <span className="badge badge-blue">R{prod.size}</span>
+                              <span>{prod.count} ta x {fmtAmount(prod.unitPrice)}</span>
+                              <span style={{ fontWeight: 700, marginLeft: "auto" }}>{fmtAmount(prod.count * prod.unitPrice)}</span>
+                            </div>
+                          ))}
+                        </div>
                       </td>
-                      <td>
-                        <button className="btn btn-sm" onClick={() => handleDelete("sale", item.id)} style={{ color: "var(--accent-red)" }}>
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </>
+                    </tr>
                   )}
-
-                  {tab === "production" && (
-                    <>
-                      <td style={{ fontWeight: 600 }}>{fmtWeight(item.rawUsedKg)}</td>
-                      <td style={{ fontWeight: 700, color: "var(--accent-primary)" }}>{item.totalBaskets} ta</td>
-                      <td className="text-muted">{item.notes ?? "—"}</td>
-                      <td>
-                        <button className="btn btn-sm" onClick={() => handleDelete("production", item.id)} style={{ color: "var(--accent-red)" }}>
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </>
-                  )}
-
-                  {tab === "materials" && (
-                    <>
-                      <td style={{ fontWeight: 600 }}>{item.supplier?.name}</td>
-                      <td>{fmtWeight(item.weightKg)}</td>
-                      <td style={{ fontWeight: 700 }}>{fmtAmount(item.totalAmount)}</td>
-                      <td className="text-green">{fmtAmount(item.paidAmount)}</td>
-                      <td>
-                        <button className="btn btn-sm" onClick={() => handleDelete("raw", item.id)} style={{ color: "var(--accent-red)" }}>
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </>
-                  )}
-
-                  {tab === "expenses" && (
-                    <>
-                      <td>{item.category}</td>
-                      <td style={{ fontWeight: 700, color: "var(--accent-red)" }}>{fmtAmount(item.amount)}</td>
-                      <td className="text-muted">{item.notes ?? "—"}</td>
-                      <td>
-                        <button className="btn btn-sm" onClick={() => handleDelete("expense", item.id)} style={{ color: "var(--accent-red)" }}>
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </>
-                  )}
-                </tr>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
