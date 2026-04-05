@@ -128,18 +128,7 @@ export default function DashboardPage() {
       iconColor: "#0891b2",
       href: "/hisobot",
     },
-    {
-      label: "Ta'minotchi",
-      value: data.supplierDebt < 0 
-        ? `+ ${fmt(Math.abs(data.supplierDebt))}` 
-        : fmt(data.supplierDebt),
-      sub: data.supplierDebt < 0 ? "Ortiqcha to'lov (Avans)" : "To'lanmagan nasiya",
-      icon: TrendingDown,
-      gradient: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
-      lightBg: "#ede9fe",
-      iconColor: "#7c3aed",
-      href: "/ombor",
-    },
+
   ];
 
   return (
@@ -279,6 +268,57 @@ export default function DashboardPage() {
                         <span className="badge badge-red" style={{ whiteSpace: "nowrap", display: "inline-block" }}>{fmt(sale.debtAmount)} qarz</span>
                       ) : (
                         <span className="badge badge-green" style={{ whiteSpace: "nowrap", display: "inline-block" }}>✓ To'liq</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Supplier Balances */}
+      <div className="card" style={{ marginBottom: "1.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#ede9fe", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Package size={15} color="#7c3aed" />
+            </div>
+            <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>Ta'minotchilar Holati</span>
+          </div>
+          <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+            Ko'rish <ArrowUpRight size={12} />
+          </span>
+        </div>
+        
+        {!data.supplierBalances || data.supplierBalances.length === 0 ? (
+          <div className="empty-state">
+            <AlertCircle size={32} />
+            <div style={{ marginTop: "0.5rem", fontWeight: 500 }}>Barcha hisob-kitoblar qilingan ✓</div>
+          </div>
+        ) : (
+          <div className="table-wrapper">
+            <table style={{ minWidth: "100%" }}>
+              <thead>
+                <tr>
+                  <th style={{ whiteSpace: "nowrap" }}>Ta'minotchi</th>
+                  <th style={{ textAlign: "right", whiteSpace: "nowrap" }}>Holati</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.supplierBalances.map(s => (
+                  <tr key={s.id}>
+                    <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{s.name}</td>
+                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      {s.balance < 0 ? (
+                        <span className="badge badge-green" style={{ whiteSpace: "nowrap", display: "inline-block" }}>
+                          Avans: {fmt(Math.abs(s.balance))}
+                        </span>
+                      ) : (
+                        <span className="badge badge-red" style={{ whiteSpace: "nowrap", display: "inline-block" }}>
+                          Qarz: {fmt(s.balance)}
+                        </span>
                       )}
                     </td>
                   </tr>
