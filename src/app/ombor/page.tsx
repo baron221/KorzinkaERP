@@ -316,15 +316,20 @@ function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { pa
 
   const grouped = allPayments.reduce((acc, p) => {
     if (!acc[p.supplier.id]) {
-      acc[p.supplier.id] = { supplier: p.supplier, total: 0, count: 0, payments: [] };
+      // Calculate supplier balance (Total Raw Materials - Total Payments)
+      const sRaw = materials.filter(m => m.supplier.id === p.supplier.id).reduce((s, m) => s + m.totalAmount, 0);
+      const sPay = payments.filter(pay => pay.supplier.id === p.supplier.id).reduce((s, pay) => s + pay.amount, 0);
+      const balance = sRaw - sPay;
+
+      acc[p.supplier.id] = { supplier: p.supplier, total: 0, count: 0, payments: [], balance };
     }
     acc[p.supplier.id].total += p.amount;
     acc[p.supplier.id].count += 1;
     acc[p.supplier.id].payments.push(p);
     return acc;
-  }, {} as Record<number, { supplier: any, total: number, count: number, payments: any[] }>);
+  }, {} as Record<number, { supplier: any, total: number, count: number, payments: any[], balance: number }>);
 
-  const groupArray = (Object.values(grouped) as { supplier: any, total: number, count: number, payments: any[] }[]).sort((a, b) => b.total - a.total);
+  const groupArray = (Object.values(grouped) as { supplier: any, total: number, count: number, payments: any[], balance: number }[]).sort((a, b) => b.total - a.total);
 
   return (
     <div className="table-wrapper">
@@ -339,7 +344,7 @@ function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { pa
           </tr>
         </thead>
         <tbody>
-          {groupArray.map((g: { supplier: any, total: number, count: number, payments: any[] }) => (
+          {groupArray.map((g: { supplier: any, total: number, count: number, payments: any[], balance: number }) => (
             <Fragment key={g.supplier.id}>
               <tr 
                 onClick={() => setExpandedSupplier(expandedSupplier === g.supplier.id ? null : g.supplier.id)}
@@ -350,7 +355,17 @@ function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { pa
                 </td>
                 <td style={{ fontWeight: 600 }}>{g.supplier.name}</td>
                 <td className="text-muted">{g.count} marta to'lov</td>
-                <td className="text-green" style={{ fontWeight: 700 }}>{fmtAmount(g.total)}</td>
+                <td className="flex items-center gap-4" style={{ fontWeight: 700 }}>
+                  <span className="text-green">{fmtAmount(g.total)}</span>
+                  {g.balance !== 0 && (
+                    <span 
+                      className={g.balance > 0 ? "text-red" : "text-green"} 
+                      style={{ fontSize: "0.75rem", background: g.balance > 0 ? "#fef2f2" : "#f0fdf4", padding: "0.2rem 0.6rem", borderRadius: "20px", fontWeight: 600 }}
+                    >
+                      {g.balance > 0 ? `Qarz: ${fmtAmount(g.balance)}` : `Avans: ${fmtAmount(Math.abs(g.balance))}`}
+                    </span>
+                  )}
+                </td>
                 <td style={{ textAlign: "right" }}>
                   <button 
                     className="btn btn-sm btn-secondary" 
