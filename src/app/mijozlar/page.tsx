@@ -36,6 +36,8 @@ export default function MijozlarPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+
   const loadAll = useCallback(async () => {
     const [c, dash] = await Promise.all([
       fetch("/api/customers").then((r) => r.json()),
@@ -101,7 +103,7 @@ export default function MijozlarPage() {
       {loading ? (
         <div style={{ color: "var(--text-secondary)", textAlign: "center", padding: "2rem" }}>Yuklanmoqda...</div>
       ) : tab === "list" ? (
-        <CustomerList customers={filtered} search={search} setSearch={setSearch} onDelete={handleDelete} />
+        <CustomerList customers={filtered} search={search} setSearch={setSearch} onDelete={handleDelete} onSelectCustomer={setSelectedCustomerId} />
       ) : tab === "sell" ? (
         <SalesList onDelete={handleDelete} />
       ) : (
@@ -117,6 +119,9 @@ export default function MijozlarPage() {
       {showPayment && (
         <AddPaymentModal customers={customers} onClose={() => setShowPayment(false)} onSuccess={() => { setShowPayment(false); loadAll(); }} />
       )}
+      {selectedCustomerId && (
+        <CustomerDetailsModal customerId={selectedCustomerId} onClose={() => setSelectedCustomerId(null)} />
+      )}
 
       {/* Mobile FAB */}
       <MobileFab
@@ -131,7 +136,7 @@ export default function MijozlarPage() {
   );
 }
 
-function CustomerList({ customers, search, setSearch, onDelete }: { customers: Customer[]; search: string; setSearch: (s: string) => void; onDelete: (type: string, id: number) => void }) {
+function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer }: { customers: Customer[]; search: string; setSearch: (s: string) => void; onDelete: (type: string, id: number) => void; onSelectCustomer: (id: number) => void }) {
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
@@ -152,6 +157,7 @@ function CustomerList({ customers, search, setSearch, onDelete }: { customers: C
                 <th>Xaridlar</th>
                 <th>Jami Xarid</th>
                 <th>Qarz</th>
+                <th>Amal</th>
               </tr>
             </thead>
             <tbody>
@@ -168,7 +174,12 @@ function CustomerList({ customers, search, setSearch, onDelete }: { customers: C
                 });
                 return (
                   <tr key={c.id}>
-                    <td style={{ fontWeight: 600 }}>{c.name}</td>
+                    <td 
+                      style={{ fontWeight: 600, color: "var(--accent-primary)", cursor: "pointer", textDecoration: "underline" }}
+                      onClick={() => onSelectCustomer(c.id)}
+                    >
+                      {c.name}
+                    </td>
                     <td className="text-muted">{c.phone ?? "—"}</td>
                     <td>
                       <div>{c.sales.length} ta savdo</div>
@@ -498,6 +509,78 @@ function AddPaymentModal({ customers, onClose, onSuccess }: {
           <button className="btn btn-secondary btn-sm" onClick={onClose}>Bekor</button>
           <button className="btn btn-primary btn-sm" onClick={submit} disabled={saving}>{saving ? "..." : "Saqlash"}</button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CustomerDetailsModal({ customerId, onClose }: { customerId: number; onClose: () => void }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/customers/${customerId}`).then(r => r.json()).then(d => {
+      setData(d);
+      setLoading(false);
+    });
+  }, [customerId]);
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 800 }}>
+        <div className="modal-title">
+          <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Users size={18} /> Tarix: {data?.name || "Yuklanmoqda..."}
+          </span>
+          <button className="btn btn-secondary btn-sm" onClick={onClose}><X size={14} /></button>
+        </div>
+        {loading ? (
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-secondary)" }}>Yuklanmoqda...</div>
+        ) : (
+          <div className="table-wrapper" style={{ maxHeight: "65vh", overflowY: "auto", margin: 0 }}>
+            <table style={{ width: "100%", textAlign: "left" }}>
+              <thead style={{ position: "sticky", top: 0, background: "var(--bg-secondary)", zIndex: 1 }}>
+                <tr>
+                  <th>Sana</th>
+                  <th>Xarid (Razmer×Soni×Narx)</th>
+                  <th>Jami Summa</th>
+                  <th>To'langan</th>
+                  <th>Qarz</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data?.sales?.length === 0 ? (
+                  <tr><td colSpan={5} style={{ textAlign: "center", padding: "2rem" }}>Hali xarid qilmagan</td></tr>
+                ) : (
+                  data?.sales?.map((s: any) => (
+                    <tr key={s.id}>
+                      <td className="text-muted">{new Date(s.date).toLocaleDateString("uz-UZ")}</td>
+                      <td>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                          {s.items?.map((item: any, i: number) => (
+                            <div key={i} style={{ fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                              <span className="badge badge-blue">R{item.size}</span>
+                              <span style={{ fontWeight: 500 }}>{item.count} ta</span>
+                              <span className="text-muted">× {fmtAmount(item.unitPrice)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td style={{ fontWeight: 600 }}>{fmtAmount(s.totalAmount)}</td>
+                      <td className="text-green">{fmtAmount(s.paidAmount)}</td>
+                      <td>
+                        {s.debtAmount > 0 
+                          ? <span className="badge badge-red">{fmtAmount(s.debtAmount)}</span> 
+                          : <span className="badge badge-green">✓</span>
+                        }
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

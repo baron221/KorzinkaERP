@@ -130,6 +130,13 @@ export async function GET(req: NextRequest) {
       _sum: { amount: true },
     });
     const totalExpAmount = totalExpensesForProfit._sum.amount ?? 0;
+
+    const expenseBreakdown = await prisma.expense.groupBy({
+      by: ['category'],
+      where: dateFilter,
+      _sum: { amount: true }
+    });
+
     const totalRevAmount = filteredSaleAgg._sum.totalAmount ?? 0;
 
     // Sof Foyda = Yalpi Tushum - Tannarx(COGS) - Boshqa Xarajatlar
@@ -152,6 +159,7 @@ export async function GET(req: NextRequest) {
       customerDebt: allDebtAgg._sum.debtAmount ?? 0,
       monthlyExpenses: expenseAgg._sum.amount ?? 0,
       deductedExpenses: totalExpAmount,
+      expenseBreakdown,
       customerCount: await prisma.customer.count(),
       supplierCount: await prisma.supplier.count(),
       recentSales,
