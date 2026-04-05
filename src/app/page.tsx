@@ -111,25 +111,27 @@ export default function DashboardPage() {
       iconColor: "#dc2626",
       href: "/xarajatlar",
     },
-    {
-      label: "Sof Foyda",
-      value: fmt(data.netProfit),
-      sub: (() => {
-        let bDown = "";
-        if (data.expenseBreakdown && data.expenseBreakdown.length > 0) {
-          const emojis: Record<string, string> = { ELECTRICITY: "⚡", WAGES: "👷", FOOD: "🍱", MISC: "📎" };
-          bDown = " (" + data.expenseBreakdown.map(e => `${emojis[e.category] || ''}${new Intl.NumberFormat("uz-UZ").format(e._sum.amount ?? 0)}`).join(' + ') + ")";
-        }
-        return `Tushum: ${fmt(data.totalRevenue)} | Tannarx: ${fmt(data.totalCOGS)}${data.deductedExpenses > 0 ? ` | Xarajat: ${fmt(data.deductedExpenses)}${bDown}` : ''}`;
-      })(),
-      icon: TrendingUp,
-      gradient: "linear-gradient(135deg, #0891b2, #06b6d4)",
-      lightBg: "#cffafe",
-      iconColor: "#0891b2",
-      href: "/hisobot",
-    },
-
   ];
+
+  const netProfitCard = {
+    label: "Sof Foyda",
+    value: fmt(data.netProfit),
+    sub: (() => {
+      let bDown = "";
+      if (data.expenseBreakdown && data.expenseBreakdown.length > 0) {
+        const emojis: Record<string, string> = { ELECTRICITY: "⚡", WAGES: "👷", FOOD: "🍱", MISC: "📎" };
+        bDown = " (" + data.expenseBreakdown.map(e => `${emojis[e.category] || ''}${new Intl.NumberFormat("uz-UZ").format(e._sum.amount ?? 0)}`).join(' + ') + ")";
+      }
+      return `Tushum: ${fmt(data.totalRevenue)} | Tannarx: ${fmt(data.totalCOGS)}${data.deductedExpenses > 0 ? ` | Xarajat: ${fmt(data.deductedExpenses)}${bDown}` : ''}`;
+    })(),
+    icon: TrendingUp,
+    gradient: "linear-gradient(135deg, #059669, #10b981)",
+    lightBg: "#d1fae5",
+    iconColor: "#059669",
+    href: "/hisobot",
+  };
+
+
 
   return (
     <div>
@@ -178,7 +180,58 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI cards */}
+      {/* Net Profit Hero Card */}
+      <Link href={netProfitCard.href} style={{ textDecoration: "none", color: "inherit", display: "block", marginBottom: "1.5rem" }}>
+        <div 
+          className="stat-card" 
+          style={{ 
+            position: "relative", 
+            overflow: "hidden", 
+            cursor: "pointer", 
+            padding: "2rem",
+            background: "white",
+            border: "1px solid var(--border)",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.05)",
+            transition: "all 0.3s ease"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1.5rem" }}>
+            <div style={{ flex: 1 }}>
+              <div className="stat-label" style={{ fontSize: "0.95rem", opacity: 0.8, marginBottom: "0.5rem" }}>{netProfitCard.label}</div>
+              <div className="stat-value" style={{ fontSize: "2.5rem", fontWeight: 900, letterSpacing: "-0.04em", color: "var(--accent-primary)" }}>{netProfitCard.value}</div>
+              <div className="stat-sub" style={{ fontSize: "0.9rem", marginTop: "0.75rem", background: "#f8fafc", padding: "0.75rem 1rem", borderRadius: "12px", border: "1px solid #f1f5f9", lineHeight: 1.5 }}>
+                {netProfitCard.sub}
+              </div>
+            </div>
+            <div
+              style={{
+                width: 70,
+                height: 70,
+                borderRadius: 20,
+                background: netProfitCard.lightBg,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                boxShadow: `0 8px 16px -4px ${netProfitCard.lightBg}CC`
+              }}
+            >
+              <netProfitCard.icon size={32} color={netProfitCard.iconColor} />
+            </div>
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 4,
+              background: netProfitCard.gradient,
+              borderRadius: "0 0 16px 16px",
+            }}
+          />
+        </div>
+      </Link>
       <div className="grid-3" style={{ marginBottom: "1.5rem" }}>
         {cards.map((card) => (
           <Link href={card.href} key={card.label} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
