@@ -301,26 +301,9 @@ function SuppliersTable({ suppliers, materials, onDelete, onSelectSupplier }: { 
 function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { payments: SupplierPayment[]; materials: RawMaterial[]; onDelete: (type: string, id: number) => void; onSelectSupplier: (id: number) => void }) {
   const [expandedSupplier, setExpandedSupplier] = useState<number | null>(null);
 
-  const derivedPayments = materials.map((m) => {
-    // Only derive payment differences if there's an actual unrecorded upfront
-    const linkedPayments = payments.filter((p) => p.rawMaterialId === m.id);
-    const sumLinked = linkedPayments.reduce((s, p) => s + p.amount, 0);
-    const upfrontPayment = m.paidAmount - sumLinked;
-    if (upfrontPayment > 0) {
-      return {
-        id: `upfront-${m.id}`,
-        isUpfront: true,
-        amount: upfrontPayment,
-        date: m.date,
-        notes: "Seryo qabul qilingandagi to'lov",
-        supplier: m.supplier,
-      };
-    }
-    return null;
-  }).filter(Boolean) as any[];
-
-  // Filter out internal fake splits that just clutter the UI
-  const allPayments = [...payments, ...derivedPayments]
+  // Use ONLY real payments from the database to represent actual cash flow
+  // and avoid double-counting advance usage.
+  const allPayments = payments
     .filter((p) => !p.notes?.includes("Avans (oldindan to'lov) hisobidan yopildi"))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -398,11 +381,9 @@ function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { pa
                               <td className="text-green" style={{ fontWeight: 600, padding: "0.5rem 1rem" }}>{fmtAmount(p.amount)}</td>
                               <td className="text-muted" style={{ fontSize: "0.85rem", padding: "0.5rem 1rem" }}>{p.notes ?? "—"}</td>
                               <td style={{ padding: "0.5rem 1rem" }}>
-                                {!p.isUpfront && (
-                                  <button className="btn btn-sm" onClick={() => onDelete("supplier-payment", p.id)} style={{ color: "var(--accent-red)", padding: "0.3rem" }}>
-                                    <Trash2 size={14} />
-                                  </button>
-                                )}
+                                <button className="btn btn-sm" onClick={() => onDelete("supplier-payment", p.id)} style={{ color: "var(--accent-red)", padding: "0.3rem" }}>
+                                  <Trash2 size={14} />
+                                </button>
                               </td>
                             </tr>
                           ))}
@@ -654,7 +635,7 @@ export function SupplierDetailsModal({ supplierId, onClose }: { supplierId: numb
         date: m.date,
         createdAt: m.createdAt,
         amount: m.totalAmount,
-        notes: `📦 Seryo kirimi (${fmtWeight(m.weightKg)} × ${fmtAmount(m.pricePerKg)})`,
+        notes: `📦 Seryo olindi (${fmtWeight(m.weightKg)} × ${fmtAmount(m.pricePerKg)})`,
       });
     });
     data.supplierPayments?.forEach((p: any) => {
