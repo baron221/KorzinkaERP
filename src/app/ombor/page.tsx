@@ -318,18 +318,15 @@ function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { pa
       const sRaw = materials.filter(m => m.supplier.id === p.supplier.id).reduce((s, m) => s + m.totalAmount, 0);
       const sPay = payments.filter(pay => pay.supplier.id === p.supplier.id).reduce((s, pay) => s + pay.amount, 0);
       const balance = sRaw - sPay;
-      const usedAvans = Math.min(sRaw, sPay);
-      const remainingAvans = Math.max(0, sPay - sRaw);
-
-      acc[p.supplier.id] = { supplier: p.supplier, total: 0, count: 0, payments: [], balance, usedAvans, remainingAvans };
+      acc[p.supplier.id] = { supplier: p.supplier, total: 0, count: 0, payments: [], balance, totalMaterials: sRaw };
     }
     acc[p.supplier.id].total += p.amount;
     acc[p.supplier.id].count += 1;
     acc[p.supplier.id].payments.push(p);
     return acc;
-  }, {} as Record<number, { supplier: any, total: number, count: number, payments: any[], balance: number, usedAvans: number, remainingAvans: number }>);
+  }, {} as Record<number, { supplier: any, total: number, count: number, payments: any[], balance: number, totalMaterials: number }>);
 
-  const groupArray = (Object.values(grouped) as { supplier: any, total: number, count: number, payments: any[], balance: number, usedAvans: number, remainingAvans: number }[]).sort((a, b) => b.total - a.total);
+  const groupArray = (Object.values(grouped) as { supplier: any, total: number, count: number, payments: any[], balance: number, totalMaterials: number }[]).sort((a, b) => b.total - a.total);
 
   return (
     <div className="table-wrapper">
@@ -340,13 +337,13 @@ function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { pa
             <th>Ta'minotchi</th>
             <th>To'lovlar soni</th>
             <th>Umumiy summa</th>
-            <th>Ishlatilgan Avans</th>
-            <th>Qolgan Avans</th>
+            <th>Jami Seryo</th>
+            <th>Qoldiq</th>
             <th style={{ textAlign: "right" }}>Amal</th>
           </tr>
         </thead>
         <tbody>
-          {groupArray.map((g: { supplier: any, total: number, count: number, payments: any[], balance: number, usedAvans: number, remainingAvans: number }) => (
+          {groupArray.map((g: { supplier: any, total: number, count: number, payments: any[], balance: number, totalMaterials: number }) => (
             <Fragment key={g.supplier.id}>
               <tr 
                 onClick={() => setExpandedSupplier(expandedSupplier === g.supplier.id ? null : g.supplier.id)}
@@ -360,21 +357,24 @@ function PaymentsTable({ payments, materials, onDelete, onSelectSupplier }: { pa
                 <td style={{ fontWeight: 700 }}>
                   <span className="text-green">{fmtAmount(g.total)}</span>
                 </td>
-                <td className="text-muted" style={{ fontWeight: 600 }}>{fmtAmount(g.usedAvans)}</td>
+                <td className="text-muted" style={{ fontWeight: 600 }}>{fmtAmount(g.totalMaterials)}</td>
                 <td>
-                  <span 
-                    className={g.remainingAvans > 0 ? "text-green" : "text-muted"} 
-                    style={{ fontWeight: 700 }}
-                  >
-                    {fmtAmount(g.remainingAvans)}
-                  </span>
-                  {g.balance > 0 && (
+                  {g.balance < 0 ? (
+                    <span 
+                      className="text-green" 
+                      style={{ fontSize: "0.75rem", background: "#f0fdf4", padding: "0.2rem 0.6rem", borderRadius: "20px", fontWeight: 700, whiteSpace: "nowrap" }}
+                    >
+                      Avans: {fmtAmount(Math.abs(g.balance))}
+                    </span>
+                  ) : g.balance > 0 ? (
                     <span 
                       className="text-red" 
-                      style={{ fontSize: "0.75rem", background: "#fef2f2", padding: "0.2rem 0.6rem", borderRadius: "20px", fontWeight: 600, marginLeft: "0.5rem" }}
+                      style={{ fontSize: "0.75rem", background: "#fef2f2", padding: "0.2rem 0.6rem", borderRadius: "20px", fontWeight: 700, whiteSpace: "nowrap" }}
                     >
                       Qarz: {fmtAmount(g.balance)}
                     </span>
+                  ) : (
+                    <span className="text-muted" style={{ fontWeight: 600 }}>Yopiq ✓</span>
                   )}
                 </td>
                 <td style={{ textAlign: "right" }}>
