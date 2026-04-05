@@ -28,12 +28,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Majburiy maydonlar" }, { status: 400 });
   }
 
+  let finalNotes = notes || null;
+  if (!finalNotes) {
+    finalNotes = rawMaterialId ? "Qarz to'lovi" : "Avans kiritildi";
+  }
+
   const payment = await prisma.supplierPayment.create({
     data: {
       supplierId: parseInt(supplierId),
       rawMaterialId: rawMaterialId ? parseInt(rawMaterialId) : null,
       amount: parseFloat(amount),
-      notes: notes || null,
+      notes: finalNotes,
       date: date ? new Date(date) : new Date(),
     },
   });

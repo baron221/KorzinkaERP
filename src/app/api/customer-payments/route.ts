@@ -14,6 +14,11 @@ export async function POST(req: NextRequest) {
     const amountFloat = parseFloat(amount);
     const customerIdInt = parseInt(customerId);
 
+    let finalNotes = notes || null;
+    if (!finalNotes) {
+      finalNotes = saleId ? "Qarz to'lovi" : "Avans (Oldindan kiritildi)";
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       // 1. Create the payment record
       const payment = await tx.customerPayment.create({
@@ -21,7 +26,7 @@ export async function POST(req: NextRequest) {
           customerId: customerIdInt,
           saleId: saleId ? parseInt(saleId) : null,
           amount: amountFloat,
-          notes: notes || null,
+          notes: finalNotes,
           date: date ? new Date(date) : new Date(),
         },
       });
