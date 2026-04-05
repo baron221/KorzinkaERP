@@ -50,6 +50,7 @@ export default function OmborPage() {
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
 
   const loadAll = useCallback(async () => {
     const [s, m, p] = await Promise.all([
@@ -114,7 +115,7 @@ export default function OmborPage() {
       ) : tab === "materials" ? (
         <MaterialsTable materials={materials} onDelete={handleDelete} />
       ) : tab === "suppliers" ? (
-        <SuppliersTable suppliers={suppliers} materials={materials} onDelete={handleDelete} />
+        <SuppliersTable suppliers={suppliers} materials={materials} onDelete={handleDelete} onSelectSupplier={setSelectedSupplierId} />
       ) : (
         <PaymentsTable payments={payments} materials={materials} onDelete={handleDelete} />
       )}
@@ -152,8 +153,15 @@ export default function OmborPage() {
           { icon: <CreditCard size={20} />, label: "To'lov", onClick: () => setShowAddPayment(true) },
         ]}
       />
-    </div>
+      {/* Supplier Details Modal */}
+      {selectedSupplierId && (
+        <SupplierDetailsModal
+          supplierId={selectedSupplierId}
+          onClose={() => setSelectedSupplierId(null)}
+        />
+      )}
 
+    </div>
   );
 }
 
@@ -208,7 +216,7 @@ function MaterialsTable({ materials, onDelete }: { materials: RawMaterial[]; onD
   );
 }
 
-function SuppliersTable({ suppliers, materials, onDelete }: { suppliers: Supplier[]; materials: RawMaterial[]; onDelete: (type: string, id: number) => void }) {
+function SuppliersTable({ suppliers, materials, onDelete, onSelectSupplier }: { suppliers: Supplier[]; materials: RawMaterial[]; onDelete: (type: string, id: number) => void; onSelectSupplier: (id: number) => void }) {
   const [expanded, setExpanded] = useState<number | null>(null);
   if (suppliers.length === 0)
     return (
@@ -230,7 +238,12 @@ function SuppliersTable({ suppliers, materials, onDelete }: { suppliers: Supplie
               onClick={() => setExpanded(expanded === s.id ? null : s.id)}
             >
               <div>
-                <div style={{ fontWeight: 600 }}>{s.name}</div>
+                <div 
+                  style={{ fontWeight: 600, textDecoration: "underline", color: "var(--accent-primary)", cursor: "pointer" }}
+                  onClick={(e) => { e.stopPropagation(); onSelectSupplier(s.id); }}
+                >
+                  {s.name}
+                </div>
                 <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
                   {s.phone ?? "—"} · {sm.length} ta kirimi · Jami: {fmtAmount(totalPurchase)}
                 </div>
