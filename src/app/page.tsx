@@ -22,6 +22,7 @@ interface DashboardData {
   totalPaid: number;
   customerDebt: number;
   monthlyExpenses: number;
+  deductedExpenses: number;
   customerCount: number;
   supplierCount: number;
   recentSales: Array<{
@@ -111,7 +112,7 @@ export default function DashboardPage() {
     {
       label: "Sof Foyda",
       value: fmt(data.netProfit),
-      sub: `Tushum: ${fmt(data.totalRevenue)} | Tannarx: ${fmt(data.totalCOGS)}`,
+      sub: `Tushum: ${fmt(data.totalRevenue)} | Tannarx: ${fmt(data.totalCOGS)} | Xarajat: ${fmt(data.deductedExpenses)}`,
       icon: TrendingUp,
       gradient: "linear-gradient(135deg, #0891b2, #06b6d4)",
       lightBg: "#cffafe",

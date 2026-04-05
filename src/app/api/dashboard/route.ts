@@ -151,6 +151,7 @@ export async function GET(req: NextRequest) {
       totalPaid: filteredSaleAgg._sum.paidAmount ?? 0,
       customerDebt: allDebtAgg._sum.debtAmount ?? 0,
       monthlyExpenses: expenseAgg._sum.amount ?? 0,
+      deductedExpenses: totalExpAmount,
       customerCount: await prisma.customer.count(),
       supplierCount: await prisma.supplier.count(),
       recentSales,
