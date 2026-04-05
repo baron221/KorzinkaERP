@@ -449,12 +449,32 @@ function AddMaterialModal({ suppliers, onClose, onSuccess }: { suppliers: Suppli
           </div>
         </div>
         {total > 0 && (
-          <div className="alert alert-warning" style={{ marginBottom: "1rem" }}>
-            Jami summa: <strong>{fmtAmount(total)}</strong>
-            {debt > 0 && <> | Qarz: <strong className="text-red">{fmtAmount(debt)}</strong></>}
-            {prepaymentBalance > 0 && debt > 0 && (
-              <> | Avansdan so'ng: <strong style={{ color: "var(--accent-green)" }}>{fmtAmount(debtAfterPrepayment)}</strong></>
+          <div className="alert" style={{ marginBottom: "1rem", background: "var(--bg-secondary)", border: "1px solid var(--border)", padding: "1rem", borderRadius: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+              <span>Jami summa:</span>
+              <strong style={{ fontSize: "1.05rem" }}>{fmtAmount(total)}</strong>
+            </div>
+            
+            {prepaymentBalance > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem", color: "var(--accent-green)" }}>
+                <span>Avans hisobidan chegiriladi:</span>
+                <strong>- {fmtAmount(Math.min(debt, prepaymentBalance))}</strong>
+              </div>
             )}
+            
+            {parseFloat(form.paidAmount || "0") > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem", color: "var(--accent-primary)" }}>
+                <span>Hozir to'lanadigan:</span>
+                <strong>- {fmtAmount(parseFloat(form.paidAmount || "0"))}</strong>
+              </div>
+            )}
+            
+            <div style={{ borderTop: "1px dashed var(--border)", margin: "0.5rem 0", paddingTop: "0.5rem", display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontWeight: 600 }}>Qolgan qarz:</span>
+              <strong className={debtAfterPrepayment > 0 ? "text-red" : "text-green"}>
+                {debtAfterPrepayment > 0 ? fmtAmount(debtAfterPrepayment) : "0 so'm (To'liq qoplandi)"}
+              </strong>
+            </div>
           </div>
         )}
         <div className="form-group">
