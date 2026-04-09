@@ -1,293 +1,220 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
-import { 
-  ShoppingCart, 
-  Factory, 
-  Truck, 
-  Receipt, 
-  Trash2, 
-  AlertCircle,
-  Search,
-  Calendar
-} from "lucide-react";
-import { fmtAmount, fmtWeight } from "@/lib/utils";
-import { useToast } from "@/components/ToastContext";
-import { CustomerDetailsModal } from "@/app/mijozlar/page";
+import { useEffect, useState } from "react";
+import { History, ChevronDown, ChevronUp, ShoppingCart, Package, Factory, Receipt, CreditCard, User, Truck } from "lucide-react";
 
-type HistoryTab = "sales" | "production" | "materials" | "expenses";
+interface LogEntry {
+  id: number;
+  action: string;
+  actionLabel: string;
+  entity: string;
+  entityLabel: string;
+  entityId: number;
+  snapshot: Record<string, any>;
+  createdAt: string;
+}
 
-const CATEGORIES: Record<string, { label: string; emoji: string }> = {
-  ELECTRICITY: { label: "Elektr energiya", emoji: "⚡" },
-  WAGES: { label: "Ishchilar oyligi", emoji: "👷" },
-  FOOD: { label: "Ovqatlanish", emoji: "🍱" },
-  MISC: { label: "Mayda xarajatlar", emoji: "📎" },
+const entityIcons: Record<string, any> = {
+  Sale: ShoppingCart,
+  Expense: Receipt,
+  RawMaterial: Package,
+  Production: Factory,
+  SupplierPayment: CreditCard,
+  CustomerPayment: CreditCard,
+  Customer: User,
+  Supplier: Truck,
 };
 
-export default function TarixPage() {
-  const [tab, setTab] = useState<HistoryTab>("sales");
-  const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [expandedSale, setExpandedSale] = useState<number | null>(null);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
-  const { showToast } = useToast();
+const entityColors: Record<string, string> = {
+  Sale: "#4f46e5",
+  Expense: "#dc2626",
+  RawMaterial: "#059669",
+  Production: "#d97706",
+  SupplierPayment: "#7c3aed",
+  CustomerPayment: "#0891b2",
+  Customer: "#0284c7",
+  Supplier: "#16a34a",
+};
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setData([]);
-    let endpoint = "";
-    switch (tab) {
-      case "sales": endpoint = "/api/sales"; break;
-      case "production": endpoint = "/api/production"; break;
-      case "materials": endpoint = "/api/raw-materials"; break;
-      case "expenses": endpoint = "/api/expenses"; break;
-    }
+const entityBg: Record<string, string> = {
+  Sale: "#ede9fe",
+  Expense: "#fee2e2",
+  RawMaterial: "#d1fae5",
+  Production: "#fef3c7",
+  SupplierPayment: "#f3e8ff",
+  CustomerPayment: "#e0f2fe",
+  Customer: "#e0f2fe",
+  Supplier: "#dcfce7",
+};
 
-    try {
-      const res = await fetch(endpoint);
-      const d = await res.json();
-      // Expense API returns {expenses: [...], total: ...}
-      setData(tab === "expenses" ? d.expenses : d);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [tab]);
-
-  useEffect(() => { loadData(); }, [loadData]);
-
-  const handleDelete = async (type: string, id: number) => {
-    if (!confirm("O'chirishni tasdiqlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.")) return;
-    
-    try {
-      const res = await fetch(`/api/delete?type=${type}&id=${id}`, { method: "DELETE" });
-      const result = await res.json();
-      
-      if (result.error) {
-        showToast(result.error, "error");
-      } else {
-        showToast("Muvaffaqiyatli o'chirildi!");
-        loadData();
-      }
-    } catch (e) {
-      showToast("Xatolik yuz berdi", "error");
-    }
-  };
-
-  const filteredData = data.filter((item) => {
-    const s = search.toLowerCase();
-    if (tab === "sales") return item.customer?.name?.toLowerCase().includes(s);
-    if (tab === "materials") return item.supplier?.name?.toLowerCase().includes(s);
-    if (tab === "expenses") return item.category?.toLowerCase().includes(s) || (item.notes ?? "").toLowerCase().includes(s);
-    if (tab === "production") return (item.notes ?? "").toLowerCase().includes(s);
-    return true;
+function fmtDate(dateStr: string) {
+  return new Date(dateStr).toLocaleString("uz-UZ", {
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit"
   });
+}
+
+function SnapshotViewer({ snapshot, entity }: { snapshot: Record<string, any>; entity: string }) {
+  const fmtNum = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+  const rows: { label: string; value: string }[] = [];
+
+  if (entity === "Sale") {
+    if (snapshot.customer?.name) rows.push({ label: "Mijoz", value: snapshot.customer.name });
+    if (snapshot.totalAmount != null) rows.push({ label: "Jami summa", value: fmtNum(snapshot.totalAmount) + " so'm" });
+    if (snapshot.paidAmount != null) rows.push({ label: "To'langan", value: fmtNum(snapshot.paidAmount) + " so'm" });
+    if (snapshot.debtAmount != null) rows.push({ label: "Qarz", value: fmtNum(snapshot.debtAmount) + " so'm" });
+    if (snapshot.notes) rows.push({ label: "Izoh", value: snapshot.notes });
+  } else if (entity === "Expense") {
+    const cats: Record<string, string> = { ELECTRICITY: "Elektr", WAGES: "Ish haqi", FOOD: "Ovqat", MISC: "Boshqa" };
+    rows.push({ label: "Kategoriya", value: cats[snapshot.category] || snapshot.category });
+    rows.push({ label: "Summa", value: fmtNum(snapshot.amount) + " so'm" });
+    if (snapshot.notes) rows.push({ label: "Izoh", value: snapshot.notes });
+  } else if (entity === "RawMaterial") {
+    if (snapshot.supplier?.name) rows.push({ label: "Ta'minotchi", value: snapshot.supplier.name });
+    if (snapshot.weightKg != null) rows.push({ label: "Og'irlik", value: snapshot.weightKg + " kg" });
+    if (snapshot.totalAmount != null) rows.push({ label: "Jami summa", value: fmtNum(snapshot.totalAmount) + " so'm" });
+    if (snapshot.debtAmount != null) rows.push({ label: "Qarz", value: fmtNum(snapshot.debtAmount) + " so'm" });
+  } else if (entity === "Production") {
+    if (snapshot.rawUsedKg != null) rows.push({ label: "Sarflangan seryo", value: snapshot.rawUsedKg + " kg" });
+    if (snapshot.totalBaskets != null) rows.push({ label: "Jami korzinka", value: snapshot.totalBaskets + " ta" });
+    if (snapshot.items) {
+      snapshot.items.forEach((item: any) => {
+        rows.push({ label: `Razmer ${item.size}`, value: `${item.count} ta / ${item.weightGrams}g` });
+      });
+    }
+  } else if (entity === "SupplierPayment") {
+    if (snapshot.amount != null) rows.push({ label: "Summa", value: fmtNum(snapshot.amount) + " so'm" });
+    if (snapshot.notes) rows.push({ label: "Izoh", value: snapshot.notes });
+  } else {
+    Object.entries(snapshot).forEach(([k, v]) => {
+      if (typeof v !== "object" && v != null) rows.push({ label: k, value: String(v) });
+    });
+  }
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem" }}>
+      {rows.map((row, i) => (
+        <div key={i} style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "10px", border: "1px solid #f1f5f9" }}>
+          <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", fontWeight: 600, textTransform: "uppercase", marginBottom: "0.25rem" }}>
+            {row.label}
+          </div>
+          <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text-primary)" }}>{row.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function TarixPage() {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [filter, setFilter] = useState("ALL");
+
+  useEffect(() => {
+    fetch("/api/activity-log")
+      .then(r => r.json())
+      .then(d => { setLogs(Array.isArray(d) ? d : []); setLoading(false); });
+  }, []);
+
+  const entityTypes = ["ALL", ...Array.from(new Set(logs.map(l => l.entity)))];
+  const entityFilterLabels: Record<string, string> = {
+    ALL: "Barchasi", Sale: "Savdo", Expense: "Xarajat", RawMaterial: "Seryo",
+    Production: "Ishlab Chiqarish", SupplierPayment: "Ta'minotchi To'lovi",
+    CustomerPayment: "Mijoz To'lovi", Customer: "Mijoz", Supplier: "Ta'minotchi",
+  };
+  const filtered = filter === "ALL" ? logs : logs.filter(l => l.entity === filter);
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <div className="page-title">Amallar Tarixi</div>
-          <div className="page-sub">Barcha yozuvlarni ko'rish va boshqarish</div>
+      <div style={{
+        background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%)",
+        borderRadius: "20px", padding: "1.75rem 2rem", marginBottom: "1.5rem",
+        color: "white", position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", right: -30, top: -30, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.4rem" }}>📋 Audit Tizimi</div>
+          <div style={{ fontSize: "1.6rem", fontWeight: 900 }}>Amallar Tarixi</div>
+          <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)", marginTop: "0.4rem" }}>O'chirilgan va yaratilgan barcha yozuvlarning to'liq tarixi</div>
         </div>
       </div>
 
-      <div className="tabs">
-        <button className={`tab ${tab === "sales" ? "active" : ""}`} onClick={() => setTab("sales")}>
-          <ShoppingCart size={15} style={{ marginRight: "0.5rem" }} /> Savdolar
-        </button>
-        <button className={`tab ${tab === "production" ? "active" : ""}`} onClick={() => setTab("production")}>
-          <Factory size={15} style={{ marginRight: "0.5rem" }} /> Ishlab chiqarish
-        </button>
-        <button className={`tab ${tab === "materials" ? "active" : ""}`} onClick={() => setTab("materials")}>
-          <Truck size={15} style={{ marginRight: "0.5rem" }} /> Seryo Kirimi
-        </button>
-        <button className={`tab ${tab === "expenses" ? "active" : ""}`} onClick={() => setTab("expenses")}>
-          <Receipt size={15} style={{ marginRight: "0.5rem" }} /> Xarajatlar
-        </button>
-      </div>
-
-      <div className="card" style={{ marginBottom: "1rem" }}>
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <div className="search-bar" style={{ flex: 1 }}>
-            <Search size={14} className="search-icon" />
-            <input 
-              className="input" 
-              placeholder="Qidirish..." 
-              value={search} 
-              onChange={(e) => setSearch(e.target.value)} 
-            />
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-secondary)", fontSize: "0.85rem" }}>
-             <Calendar size={14} /> Jami: {filteredData.length} ta yozuv
-          </div>
-        </div>
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+        {entityTypes.map(type => (
+          <button key={type} onClick={() => setFilter(type)} style={{
+            padding: "0.35rem 0.9rem", borderRadius: "20px",
+            border: `2px solid ${filter === type ? (entityColors[type] || "#4f46e5") : "var(--border)"}`,
+            background: filter === type ? (entityBg[type] || "#ede9fe") : "transparent",
+            color: filter === type ? (entityColors[type] || "#4f46e5") : "var(--text-secondary)",
+            fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", transition: "all 0.2s ease"
+          }}>
+            {entityFilterLabels[type] || type}
+          </button>
+        ))}
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "4rem", color: "var(--text-secondary)" }}>
-          Yuklanmoqda...
+        <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-secondary)" }}>
+          <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>⚡</div>Yuklanmoqda...
         </div>
-      ) : filteredData.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="empty-state">
-          <AlertCircle size={48} />
-          <div style={{ marginTop: "1rem" }}>Hech qanday ma'lumot topilmadi</div>
+          <History size={48} />
+          <div style={{ marginTop: "0.5rem", fontWeight: 600 }}>Hali hech qanday amal qayd etilmagan</div>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+            Biror yozuv o'chirilganda, u bu yerda saqlanib qoladi
+          </div>
         </div>
       ) : (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              {tab === "sales" && (
-                <tr>
-                  <th>Sana</th>
-                  <th>Mijoz</th>
-                  <th>Jami</th>
-                  <th>To'langan</th>
-                  <th>Qarz</th>
-                  <th>Amal</th>
-                </tr>
-              )}
-              {tab === "production" && (
-                <tr>
-                  <th>Sana</th>
-                  <th>Sarflangan Seryo</th>
-                  <th>Jami Mahsulot</th>
-                  <th>Izoh</th>
-                  <th>Amal</th>
-                </tr>
-              )}
-              {tab === "materials" && (
-                <tr>
-                  <th>Sana</th>
-                  <th>Ta'minotchi</th>
-                  <th>Og'irlik</th>
-                  <th>Jami Summa</th>
-                  <th>To'langan</th>
-                  <th>Amal</th>
-                </tr>
-              )}
-              {tab === "expenses" && (
-                <tr>
-                  <th>Sana</th>
-                  <th>Kategoriya</th>
-                  <th>Summa</th>
-                  <th>Izoh</th>
-                  <th>Amal</th>
-                </tr>
-              )}
-            </thead>
-            <tbody>
-              {filteredData.map((item) => (
-                <React.Fragment key={item.id}>
-                  <tr 
-                    style={{ cursor: tab === "sales" ? "pointer" : "default" }}
-                    onClick={() => {
-                      if (tab === "sales") {
-                        setExpandedSale(expandedSale === item.id ? null : item.id);
-                      }
-                    }}
-                  >
-                    <td className="text-muted">{new Date(item.date).toLocaleDateString("uz-UZ")}</td>
-                    
-                    {tab === "sales" && (
-                      <>
-                        <td 
-                          style={{ fontWeight: 600, color: "var(--accent-primary)", textDecoration: "underline" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCustomerId(item.customer?.id);
-                          }}
-                        >
-                          {item.customer?.name}
-                        </td>
-                        <td style={{ fontWeight: 700 }}>{fmtAmount(item.totalAmount)}</td>
-                        <td className="text-green">{fmtAmount(item.paidAmount)}</td>
-                        <td>
-                          {item.debtAmount > 0 ? (
-                            <span className="badge badge-red">{fmtAmount(item.debtAmount)}</span>
-                          ) : (
-                            <span className="badge badge-green">To'liq</span>
-                          )}
-                        </td>
-                        <td>
-                          <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); handleDelete("sale", item.id); }} style={{ color: "var(--accent-red)" }}>
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </>
-                    )}
-
-                    {tab === "production" && (
-                      <>
-                        <td style={{ fontWeight: 600 }}>{fmtWeight(item.rawUsedKg)}</td>
-                        <td style={{ fontWeight: 700, color: "var(--accent-primary)" }}>{item.totalBaskets} ta</td>
-                        <td className="text-muted">{item.notes ?? "—"}</td>
-                        <td>
-                          <button className="btn btn-sm" onClick={() => handleDelete("production", item.id)} style={{ color: "var(--accent-red)" }}>
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </>
-                    )}
-
-                    {tab === "materials" && (
-                      <>
-                        <td style={{ fontWeight: 600 }}>{item.supplier?.name}</td>
-                        <td>{fmtWeight(item.weightKg)}</td>
-                        <td style={{ fontWeight: 700 }}>{fmtAmount(item.totalAmount)}</td>
-                        <td className="text-green">{fmtAmount(item.paidAmount)}</td>
-                        <td>
-                          <button className="btn btn-sm" onClick={() => handleDelete("raw", item.id)} style={{ color: "var(--accent-red)" }}>
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </>
-                    )}
-
-                    {tab === "expenses" && (
-                      <>
-                        <td>
-                          <span className="badge" style={{ background: "var(--bg-secondary)" }}>
-                            {CATEGORIES[item.category]?.emoji} {CATEGORIES[item.category]?.label || item.category}
-                          </span>
-                        </td>
-                        <td style={{ fontWeight: 700, color: "var(--accent-red)" }}>{fmtAmount(item.amount)}</td>
-                        <td className="text-muted">{item.notes ?? "—"}</td>
-                        <td>
-                          <button className="btn btn-sm" onClick={() => handleDelete("expense", item.id)} style={{ color: "var(--accent-red)" }}>
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                  
-                  {tab === "sales" && expandedSale === item.id && (
-                    <tr style={{ background: "var(--bg-secondary)" }}>
-                      <td colSpan={6} style={{ padding: "1rem" }}>
-                        <div style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.5rem" }}>Xarid ma'lumotlari:</div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                          {item.items?.map((prod: any, idx: number) => (
-                            <div key={idx} style={{ display: "flex", gap: "1rem" }}>
-                              <span className="badge badge-blue">R{prod.size}</span>
-                              <span>{prod.count} ta x {fmtAmount(prod.unitPrice)}</span>
-                              <span style={{ fontWeight: 700, marginLeft: "auto" }}>{fmtAmount(prod.count * prod.unitPrice)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          {filtered.map(log => {
+            const Icon = entityIcons[log.entity] || History;
+            const color = entityColors[log.entity] || "#4f46e5";
+            const bg = entityBg[log.entity] || "#ede9fe";
+            const isExpanded = expandedId === log.id;
+            return (
+              <div key={log.id} style={{
+                background: "white",
+                border: `1px solid ${isExpanded ? color + "40" : "var(--border)"}`,
+                borderRadius: "14px", overflow: "hidden",
+                transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                boxShadow: isExpanded ? `0 4px 12px ${color}20` : "0 1px 3px rgba(0,0,0,0.04)"
+              }}>
+                <div onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                  style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem 1.25rem", cursor: "pointer" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icon size={18} color={color} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "var(--text-primary)" }}>{log.entityLabel}</span>
+                      <span style={{
+                        fontSize: "0.7rem", fontWeight: 700, padding: "0.15rem 0.5rem", borderRadius: "20px",
+                        background: log.action === "DELETE" ? "#fee2e2" : "#d1fae5",
+                        color: log.action === "DELETE" ? "#b91c1c" : "#065f46"
+                      }}>{log.actionLabel}</span>
+                      <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>#{log.entityId}</span>
+                    </div>
+                    <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: "0.2rem" }}>{fmtDate(log.createdAt)}</div>
+                  </div>
+                  <div style={{ color: "var(--text-secondary)", flexShrink: 0 }}>
+                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </div>
+                </div>
+                {isExpanded && (
+                  <div style={{ padding: "0 1.25rem 1.25rem", borderTop: `1px solid ${color}20` }}>
+                    <div style={{ paddingTop: "1rem" }}>
+                      <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
+                        O'chirilgan paytdagi ma'lumotlar
+                      </div>
+                      <SnapshotViewer snapshot={log.snapshot} entity={log.entity} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
-
-      {selectedCustomerId && (
-        <CustomerDetailsModal customerId={selectedCustomerId} onClose={() => setSelectedCustomerId(null)} />
       )}
     </div>
   );

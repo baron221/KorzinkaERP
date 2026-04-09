@@ -161,3 +161,15 @@ model StockSnapshot {
   size16Count Int      @default(0)
   updatedAt   DateTime @updatedAt
 }
+
+// ============================================================
+// AUDIT LOG — Barcha amallar tarixi (o'chirish, yaratish)
+// ============================================================
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  action    String   // "DELETE" | "CREATE"
+  entity    String   // "Sale" | "Expense" | "RawMaterial" | "Production" | "SupplierPayment" | "CustomerPayment"
+  entityId  Int
+  snapshot  Json     // full data snapshot at time of action
+  createdAt DateTime @default(now())
+}
