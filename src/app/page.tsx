@@ -19,6 +19,7 @@ interface DashboardData {
   totalRevenue: number;
   totalCOGS: number;
   netProfit: number;
+  totalNetProfit: number;
   totalPaid: number;
   customerDebt: number;
   monthlyExpenses: number;
@@ -113,9 +114,13 @@ export default function DashboardPage() {
     },
   ];
 
+  const totalProfit = data.totalNetProfit;
+  const todayProfit = Math.max(0, data.netProfit);
+
   const netProfitCard = {
     label: "Sof Foyda",
-    value: fmt(data.netProfit),
+    totalValue: fmt(totalProfit),
+    todayValue: fmt(todayProfit),
     sub: (() => {
       let bDown = "";
       if (data.expenseBreakdown && data.expenseBreakdown.length > 0) {
@@ -125,9 +130,9 @@ export default function DashboardPage() {
       return `Tushum: ${fmt(data.totalRevenue)} | Tannarx: ${fmt(data.totalCOGS)}${data.deductedExpenses > 0 ? ` | Xarajat: ${fmt(data.deductedExpenses)}${bDown}` : ''}`;
     })(),
     icon: TrendingUp,
-    gradient: "linear-gradient(135deg, #059669, #10b981)",
-    lightBg: "#d1fae5",
-    iconColor: "#059669",
+    gradient: "linear-gradient(135deg, #4f46e5, #7c3aed)",
+    lightBg: "#ede9fe",
+    iconColor: "#4f46e5",
     href: "/hisobot",
   };
 
@@ -192,33 +197,52 @@ export default function DashboardPage() {
             background: "white",
             border: "1px solid var(--border)",
             boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.05)",
-            transition: "all 0.3s ease"
+            transition: "all 0.3s ease",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.5rem"
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1.5rem" }}>
-            <div style={{ flex: 1 }}>
-              <div className="stat-label" style={{ fontSize: "0.95rem", opacity: 0.8, marginBottom: "0.5rem" }}>{netProfitCard.label}</div>
-              <div className="stat-value" style={{ fontSize: "2.5rem", fontWeight: 900, letterSpacing: "-0.04em", color: "var(--accent-primary)" }}>{netProfitCard.value}</div>
-              <div className="stat-sub" style={{ fontSize: "0.9rem", marginTop: "0.75rem", background: "#f8fafc", padding: "0.75rem 1rem", borderRadius: "12px", border: "1px solid #f1f5f9", lineHeight: 1.5 }}>
-                {netProfitCard.sub}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 14,
+                  background: netProfitCard.lightBg,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <netProfitCard.icon size={24} color={netProfitCard.iconColor} />
               </div>
+              <div style={{ fontWeight: 800, fontSize: "1.2rem", letterSpacing: "-0.02em", color: "var(--text-primary)" }}>{netProfitCard.label}</div>
             </div>
-            <div
-              style={{
-                width: 70,
-                height: 70,
-                borderRadius: 20,
-                background: netProfitCard.lightBg,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                boxShadow: `0 8px 16px -4px ${netProfitCard.lightBg}CC`
-              }}
-            >
-              <netProfitCard.icon size={32} color={netProfitCard.iconColor} />
+            <div style={{ background: "var(--bg-secondary)", padding: "0.4rem 0.8rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>
+              Holat: {new Date().toLocaleDateString("uz-UZ")}
             </div>
           </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+            <div style={{ borderRight: "1px solid var(--border)", paddingRight: "1rem" }}>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Umumiy Sof Foyda</div>
+              <div style={{ fontSize: "1.8rem", fontWeight: 900, letterSpacing: "-0.04em", color: "var(--accent-primary)" }}>{netProfitCard.totalValue}</div>
+            </div>
+            <div style={{ paddingLeft: "0.5rem" }}>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Bugun</div>
+              <div style={{ fontSize: "1.8rem", fontWeight: 900, letterSpacing: "-0.04em", color: data.netProfit < 0 ? "var(--text-secondary)" : "#10b981" }}>
+                {netProfitCard.todayValue}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ fontSize: "0.85rem", background: "#f8fafc", padding: "1rem", borderRadius: "12px", border: "1px solid #f1f5f9", lineHeight: 1.6, color: "var(--text-secondary)" }}>
+            <div style={{ fontWeight: 600, marginBottom: "0.4rem", color: "var(--text-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>Bugungi Hisobot Tafsilotlari</div>
+            {netProfitCard.sub}
+          </div>
+
           <div
             style={{
               position: "absolute",
@@ -227,7 +251,6 @@ export default function DashboardPage() {
               right: 0,
               height: 4,
               background: netProfitCard.gradient,
-              borderRadius: "0 0 16px 16px",
             }}
           />
         </div>

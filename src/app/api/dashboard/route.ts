@@ -141,6 +141,34 @@ export async function GET(req: NextRequest) {
 
     const totalRevAmount = filteredSaleAgg._sum.totalAmount ?? 0;
 
+    // ==============================================
+    // GLOBAL (ALL-TIME) PROFIT CALCULATION
+    // ==============================================
+    const allTimeSaleAgg = await prisma.sale.aggregate({
+      _sum: { totalAmount: true }
+    });
+    const allTimeRev = allTimeSaleAgg._sum.totalAmount ?? 0;
+
+    const allTimeExpAgg = await prisma.expense.aggregate({
+      _sum: { amount: true }
+    });
+    const allTimeExp = allTimeExpAgg._sum.amount ?? 0;
+
+    const allTimeSoldAgg = await prisma.saleItem.groupBy({
+      by: ["size"],
+      _sum: { count: true },
+    });
+
+    let allTimeCOGS = 0;
+    allTimeSoldAgg.forEach((s) => {
+      const count = s._sum.count || 0;
+      const weightGram = sizeWeights[s.size] || (s.size === 16 ? 290 : s.size === 14 ? 200 : 150);
+      const costRaw = (weightGram / 1000) * avgRawPrice;
+      allTimeCOGS += count * costRaw;
+    });
+
+    const totalNetProfit = allTimeRev - allTimeCOGS - allTimeExp;
+
     // Sof Foyda = Yalpi Tushum - Tannarx(COGS) - Boshqa Xarajatlar
     const netProfit = totalRevAmount - totalCOGS - totalExpAmount;
 
@@ -170,6 +198,7 @@ export async function GET(req: NextRequest) {
       totalRevenue: totalRevAmount,
       totalCOGS,
       netProfit,
+      totalNetProfit,
       totalPaid: filteredSaleAgg._sum.paidAmount ?? 0,
       customerDebt: allDebtAgg._sum.debtAmount ?? 0,
       monthlyExpenses: expenseAgg._sum.amount ?? 0,
