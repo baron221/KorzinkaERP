@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Factory, PackagePlus, Trash2, ChevronDown } from "lucide-react";
+import { Plus, X, Factory, PackagePlus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Fragment } from "react";
 import MobileFab from "@/components/MobileFab";
 import NumericInput from "@/components/NumericInput";
