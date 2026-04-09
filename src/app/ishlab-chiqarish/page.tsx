@@ -108,129 +108,91 @@ export default function IslabChiqarishPage() {
           <Factory size={48} />
           <div>Hali ishlab chiqarish kiritilmagan</div>
         </div>
-      ) : (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Sana</th>
-                <th>Sarflangan Seryo</th>
-                <th>Jami Korzinka</th>
-                <th>Mahsulotlar (Razmerlar)</th>
-                <th>Izoh</th>
-                <th style={{ textAlign: "right" }}>Amal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {batches.map((b) => {
-                const sizesPresent = Array.from(new Set(b.items.map(i => i.size))).sort((a,b) => a-b);
-                const isExpanded = expandedBatchId === b.id;
-                return (
-                  <Fragment key={b.id}>
-                    <tr 
-                      onClick={() => setExpandedBatchId(isExpanded ? null : b.id)}
-                      style={{ 
-                        cursor: "pointer", 
-                        background: isExpanded ? "var(--bg-secondary)" : "transparent",
-                        transition: "background 0.2s ease"
-                      }}
-                      className="hover-row"
-                    >
-                      <td className="text-muted" style={{ fontSize: "0.85rem" }}>
-                        {new Date(b.date).toLocaleDateString("uz-UZ")}
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{fmtWeight(b.rawUsedKg)}</td>
-                      <td style={{ fontWeight: 800, color: "var(--accent-primary)", fontSize: "1.05rem" }}>
-                        {b.totalBaskets} <span style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--text-secondary)" }}>ta</span>
-                      </td>
-                      <td>
-                        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                          {sizesPresent.map(sz => (
-                            <span 
-                              key={sz} 
-                              className="badge" 
-                              style={{ 
-                                background: sz === 12 ? "#e0e7ff" : sz === 14 ? "#fef3c7" : "#fee2e2",
-                                color: sz === 12 ? "#4338ca" : sz === 14 ? "#b45309" : "#b91c1c",
-                                fontWeight: 700,
-                                fontSize: "0.7rem",
-                                padding: "0.2rem 0.6rem",
-                                borderRadius: "6px"
-                              }}
-                            >
-                              Razmer {sz}
-                            </span>
-                          ))}
+      ) : (() => {
+        const sizeGroups: Record<number, { count: number; rows: { date: string; batchId: number; count: number; weightGrams: number; notes: string | null }[] }> = {};
+        batches.forEach(b => {
+          b.items.forEach(item => {
+            if (!sizeGroups[item.size]) sizeGroups[item.size] = { count: 0, rows: [] };
+            sizeGroups[item.size].count += item.count;
+            sizeGroups[item.size].rows.push({ date: b.date, batchId: b.id, count: item.count, weightGrams: item.weightGrams, notes: b.notes });
+          });
+        });
+        const sizes = [12, 14, 16];
+        const sc: Record<number, { bg: string; color: string; border: string; light: string }> = {
+          12: { bg: "#e0e7ff", color: "#4338ca", border: "#c7d2fe", light: "#f5f3ff" },
+          14: { bg: "#fef3c7", color: "#b45309", border: "#fde68a", light: "#fffbeb" },
+          16: { bg: "#fee2e2", color: "#b91c1c", border: "#fecaca", light: "#fff5f5" },
+        };
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {sizes.map(size => {
+              const group = sizeGroups[size];
+              if (!group) return null;
+              const isOpen = expandedBatchId === size;
+              const c = sc[size];
+              return (
+                <div key={size} style={{ background: "white", border: `1.5px solid ${isOpen ? c.color : c.border}`, borderRadius: "16px", overflow: "hidden", boxShadow: isOpen ? `0 4px 16px ${c.bg}` : "0 1px 4px rgba(0,0,0,0.04)", transition: "all 0.2s ease" }}>
+                  <div
+                    onClick={() => setExpandedBatchId(isOpen ? null : size)}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.1rem 1.5rem", cursor: "pointer", background: isOpen ? c.light : "white", transition: "background 0.2s ease" }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 12, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: "1rem", fontWeight: 900, color: c.color }}>R{size}</span>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--text-primary)" }}>Razmer {size}</div>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "0.1rem" }}>
+                          {group.rows.length} ta partiya · Jami: <strong style={{ color: c.color }}>{group.count} ta</strong>
                         </div>
-                      </td>
-                      <td className="text-muted" style={{ fontSize: "0.85rem" }}>{b.notes ?? "—"}</td>
-                      <td style={{ textAlign: "right" }}>
-                        <button
-                          className="btn btn-sm"
-                          onClick={(e) => { e.stopPropagation(); handleDelete("production", b.id); }}
-                          style={{ color: "var(--accent-red)", padding: "0.4rem", opacity: 0.7 }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr>
-                        <td colSpan={6} style={{ padding: "0", background: "#f8fafc" }}>
-                          <div style={{ padding: "1.5rem", animation: "slideDown 0.3s ease-out" }}>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "1rem" }}>
-                              {sizesPresent.map(size => {
-                                const sizeItems = b.items.filter(i => i.size === size);
-                                return (
-                                  <div 
-                                    key={size} 
-                                    style={{ 
-                                      background: "white", 
-                                      padding: "1rem", 
-                                      borderRadius: "12px", 
-                                      border: "1px solid var(--border)",
-                                      boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
-                                    }}
-                                  >
-                                    <div style={{ 
-                                      display: "flex", 
-                                      justifyContent: "space-between", 
-                                      alignItems: "center", 
-                                      marginBottom: "0.75rem",
-                                      borderBottom: "1px solid #f1f5f9",
-                                      paddingBottom: "0.5rem"
-                                    }}>
-                                      <span style={{ fontWeight: 800, fontSize: "0.8rem", color: "var(--text-primary)" }}>RAZMER {size}</span>
-                                      <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                                        {sizeItems.length} dona tur
-                                      </span>
-                                    </div>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-                                      {sizeItems.map((item, idx) => (
-                                        <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                          <span style={{ fontWeight: 700, color: "var(--accent-primary)" }}>{item.count} ta</span>
-                                          <span style={{ fontSize: "0.75rem", background: "#f1f5f9", padding: "0.1rem 0.4rem", borderRadius: "4px", color: "var(--text-secondary)" }}>
-                                            {item.weightGrams}g
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-
-          </table>
-        </div>
-      )}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <div style={{ background: c.bg, color: c.color, fontWeight: 800, fontSize: "1.1rem", padding: "0.4rem 1rem", borderRadius: "10px" }}>
+                        {group.count} ta
+                      </div>
+                      {isOpen ? <ChevronUp size={18} color={c.color} /> : <ChevronDown size={18} color="var(--text-secondary)" />}
+                    </div>
+                  </div>
+                  {isOpen && (
+                    <div style={{ borderTop: `1px solid ${c.border}`, background: c.light }}>
+                      <div style={{ padding: "1rem 1.5rem" }}>
+                        <div style={{ fontSize: "0.72rem", fontWeight: 700, color: c.color, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
+                          Razmer {size} — Barcha partiyalar tarixi
+                        </div>
+                        <div className="table-wrapper" style={{ background: "white", borderRadius: "12px", overflow: "hidden", border: `1px solid ${c.border}`, marginBottom: 0 }}>
+                          <table style={{ marginBottom: 0 }}>
+                            <thead>
+                              <tr>
+                                <th>Sana</th>
+                                <th>Soni</th>
+                                <th>Og&apos;irligi</th>
+                                <th>Izoh</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {group.rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((row, idx) => (
+                                <tr key={idx}>
+                                  <td className="text-muted" style={{ fontSize: "0.82rem" }}>{new Date(row.date).toLocaleDateString("uz-UZ")}</td>
+                                  <td style={{ fontWeight: 700, color: c.color }}>{row.count} ta</td>
+                                  <td>
+                                    <span style={{ background: c.bg, color: c.color, padding: "0.15rem 0.5rem", borderRadius: "6px", fontSize: "0.78rem", fontWeight: 600 }}>{row.weightGrams}g</span>
+                                  </td>
+                                  <td className="text-muted" style={{ fontSize: "0.82rem" }}>{row.notes ?? "—"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {showAdd && (
         <AddProductionModal
