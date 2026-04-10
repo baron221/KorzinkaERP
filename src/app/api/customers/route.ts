@@ -28,6 +28,16 @@ export async function POST(req: NextRequest) {
     const customer = await prisma.customer.create({
       data: { name, phone: phone || null, address: address || null, notes: notes || null },
     });
+
+    await prisma.activityLog.create({
+      data: {
+        action: "CREATE",
+        entity: "Customer",
+        entityId: customer.id,
+        snapshot: customer as object,
+      },
+    });
+
     return NextResponse.json(customer);
   } catch (error) {
     console.error(error);

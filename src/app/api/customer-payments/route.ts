@@ -66,6 +66,16 @@ export async function POST(req: NextRequest) {
           remainingAmount -= paymentToApply;
         }
       }
+
+      await tx.activityLog.create({
+        data: {
+          action: "CREATE",
+          entity: "CustomerPayment",
+          entityId: payment.id,
+          snapshot: payment as object,
+        },
+      });
+
       return payment;
     });
 

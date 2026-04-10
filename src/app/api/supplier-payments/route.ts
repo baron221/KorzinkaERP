@@ -54,5 +54,14 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  await prisma.activityLog.create({
+    data: {
+      action: "CREATE",
+      entity: "SupplierPayment",
+      entityId: payment.id,
+      snapshot: payment as object,
+    },
+  });
+
   return NextResponse.json(payment, { status: 201 });
 }

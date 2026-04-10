@@ -52,5 +52,14 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  await prisma.activityLog.create({
+    data: {
+      action: "CREATE",
+      entity: "Expense",
+      entityId: expense.id,
+      snapshot: expense as object,
+    },
+  });
+
   return NextResponse.json(expense, { status: 201 });
 }

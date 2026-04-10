@@ -62,7 +62,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 4. If user provided explicit payment during intake, log it as a real payment (this will cleanly augment the supplier's payment sum later)
       if (explicitPaid > 0) {
         await tx.supplierPayment.create({
           data: {
@@ -74,6 +73,15 @@ export async function POST(req: NextRequest) {
           }
         });
       }
+
+      await tx.activityLog.create({
+        data: {
+          action: "CREATE",
+          entity: "RawMaterial",
+          entityId: mat.id,
+          snapshot: mat as object,
+        },
+      });
 
       return tx.rawMaterial.findUnique({ where: { id: mat.id }, include: { supplier: true } });
     });

@@ -21,5 +21,15 @@ export async function POST(req: NextRequest) {
   const supplier = await prisma.supplier.create({
     data: { name, phone: phone || null, address: address || null },
   });
+
+  await prisma.activityLog.create({
+    data: {
+      action: "CREATE",
+      entity: "Supplier",
+      entityId: supplier.id,
+      snapshot: supplier as object,
+    },
+  });
+
   return NextResponse.json(supplier);
 }

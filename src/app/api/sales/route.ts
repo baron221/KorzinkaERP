@@ -122,6 +122,15 @@ export async function POST(req: NextRequest) {
       include: { items: true, customer: true },
     });
 
+    await prisma.activityLog.create({
+      data: {
+        action: "CREATE",
+        entity: "Sale",
+        entityId: sale.id,
+        snapshot: sale as object,
+      },
+    });
+
     return NextResponse.json(sale, { status: 201 });
   } catch (error) {
     console.error(error);

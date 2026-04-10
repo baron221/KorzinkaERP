@@ -59,7 +59,14 @@ export async function POST(req: NextRequest) {
     include: { items: true },
   });
 
-  return NextResponse.json(batch, { status: 201 });
+  await prisma.activityLog.create({
+    data: {
+      action: "CREATE",
+      entity: "Production",
+      entityId: batch.id,
+      snapshot: batch as object,
+    },
+  });
 
   return NextResponse.json(batch, { status: 201 });
 }
