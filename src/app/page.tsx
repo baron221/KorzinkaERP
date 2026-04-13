@@ -167,7 +167,7 @@ export default function DashboardPage() {
         <button 
           onClick={handleLogout}
           style={{ 
-            position: "absolute", top: "1rem", right: "1rem", 
+            position: "absolute", top: "1rem", left: "1.25rem", 
             background: "rgba(255,255,255,0.15)", border: "none", 
             width: 38, height: 38, borderRadius: "10px", 
             display: "flex", alignItems: "center", justifyContent: "center",
