@@ -31,8 +31,8 @@ export default function LoginPage() {
         throw new Error(data.error || "Tizimga kirishda xatolik");
       }
 
-      router.push("/");
-      router.refresh();
+      // Force a hard navigation to guarantee the new cookie is recognized
+      window.location.href = "/";
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
