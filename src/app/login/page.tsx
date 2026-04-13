@@ -45,16 +45,16 @@ export default function LoginPage() {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: "var(--bg-secondary)",
+      background: "var(--bg-primary)",
       padding: "1rem"
     }}>
       <div style={{
-        background: "white",
+        background: "var(--bg-card)",
         width: "100%",
         maxWidth: "420px",
         borderRadius: "24px",
         padding: "2.5rem 2rem",
-        boxShadow: "0 20px 40px -10px rgba(0,0,0,0.08)",
+        boxShadow: "var(--shadow-lg)",
         border: "1px solid var(--border)"
       }}>
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
@@ -93,7 +93,7 @@ export default function LoginPage() {
                 type="text"
                 autoComplete="username"
                 className="input"
-                style={{ paddingLeft: "2.75rem", paddingRight: "1rem", height: "48px", background: "#f8fafc" }}
+                style={{ paddingLeft: "2.75rem", paddingRight: "1rem", height: "48px", background: "var(--bg-hover)", color: "var(--text-primary)" }}
                 placeholder="Login"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
@@ -109,7 +109,7 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 className="input"
-                style={{ paddingLeft: "2.75rem", paddingRight: "1rem", height: "48px", background: "#f8fafc" }}
+                style={{ paddingLeft: "2.75rem", paddingRight: "1rem", height: "48px", background: "var(--bg-hover)", color: "var(--text-primary)" }}
                 placeholder="Parol"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}

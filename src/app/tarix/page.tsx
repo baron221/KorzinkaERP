@@ -93,7 +93,7 @@ function SnapshotViewer({ snapshot, entity }: { snapshot: Record<string, any>; e
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem" }}>
       {rows.map((row, i) => (
-        <div key={i} style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "10px", border: "1px solid #f1f5f9" }}>
+        <div key={i} style={{ background: "var(--bg-hover)", padding: "0.75rem", borderRadius: "10px", border: "1px solid var(--border)" }}>
           <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", fontWeight: 600, textTransform: "uppercase", marginBottom: "0.25rem" }}>
             {row.label}
           </div>
@@ -174,11 +174,11 @@ export default function TarixPage() {
             const isExpanded = expandedId === log.id;
             return (
               <div key={log.id} style={{
-                background: "white",
+                background: "var(--bg-card)",
                 border: `1px solid ${isExpanded ? color + "40" : "var(--border)"}`,
                 borderRadius: "14px", overflow: "hidden",
                 transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-                boxShadow: isExpanded ? `0 4px 12px ${color}20` : "0 1px 3px rgba(0,0,0,0.04)"
+                boxShadow: isExpanded ? `0 4px 12px ${color}20` : "var(--shadow)"
               }}>
                 <div onClick={() => setExpandedId(isExpanded ? null : log.id)}
                   style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem 1.25rem", cursor: "pointer" }}>

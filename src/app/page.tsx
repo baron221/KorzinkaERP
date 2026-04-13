@@ -11,7 +11,9 @@ import {
   AlertCircle,
   ShoppingCart,
   ArrowUpRight,
+  LogOut,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface DashboardData {
   stock: { rawStockKg: number; size12Count: number; size14Count: number; size16Count: number };
@@ -51,9 +53,16 @@ const formatWeight = (kg: number) => {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const handleLogout = async () => {
+    if(!confirm("Tizimdan chiqmoqchimisiz?")) return;
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -154,6 +163,20 @@ export default function DashboardPage() {
       >
         {/* decorative circles */}
         <div style={{ position: "absolute", right: -30, top: -30, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
+        
+        <button 
+          onClick={handleLogout}
+          style={{ 
+            position: "absolute", top: "1rem", right: "1rem", 
+            background: "rgba(255,255,255,0.15)", border: "none", 
+            width: 38, height: 38, borderRadius: "10px", 
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", backdropFilter: "blur(4px)", zIndex: 10
+          }}
+          title="Tizimdan chiqish"
+        >
+          <LogOut size={18} color="white" />
+        </button>
         <div style={{ position: "absolute", right: 60, bottom: -40, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
         <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem" }}>
           <div>
