@@ -182,7 +182,7 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                     </td>
                     <td className="text-muted">{c.phone ?? "—"}</td>
                     <td>
-                      <div>{c.sales.length} ta savdo</div>
+                      <div>{c.sales.length > 0 ? `${c.sales.length} ta savdo` : "Savdo qilinmagan"}</div>
                       {(r12 > 0 || r14 > 0 || r16 > 0) && (
                         <div style={{ fontSize: "0.75rem", marginTop: "0.25rem", display: "flex", gap: "0.25rem", flexWrap: "wrap", alignItems: "center" }}>
                           {r12 > 0 && <span className="badge" style={{ padding: "0.2rem 0.4rem", background: "var(--bg-secondary)" }}>R12:{r12}</span>}
