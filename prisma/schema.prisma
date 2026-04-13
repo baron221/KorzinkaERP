@@ -173,3 +173,15 @@ model ActivityLog {
   snapshot  Json     // full data snapshot at time of action
   createdAt DateTime @default(now())
 }
+
+// ============================================================
+// USERS (Authentication and Roles)
+// ============================================================
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String   // Hashed via bcryptjs
+  role      String   @default("DIRECTOR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

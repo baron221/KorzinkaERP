@@ -12,8 +12,10 @@ import {
   Sun,
   Moon,
   Clock,
+  LogOut,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
+import { useRouter } from "next/navigation";
 
 
 const navItems = [
@@ -27,8 +29,16 @@ const navItems = [
 ];
 
 export default function Sidebar() {
-  const { theme, toggle } = useTheme();
   const pathname = usePathname();
+  const { theme, toggle } = useTheme();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    if(!confirm("Tizimdan chiqmoqchimisiz?")) return;
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <aside
@@ -164,17 +174,7 @@ export default function Sidebar() {
         <button
           onClick={toggle}
           style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0.55rem 0.8rem",
-            borderRadius: "10px",
-            border: "1px solid var(--border)",
-            background: "var(--bg-hover)",
-            cursor: "pointer",
-            marginBottom: "0.6rem",
-            transition: "all 0.2s",
+            ...actionButtonStyle
           }}
           onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-primary)"; e.currentTarget.style.color = "white"; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text-primary)"; }}
@@ -185,33 +185,53 @@ export default function Sidebar() {
           </span>
           <div
             style={{
-              width: 34,
-              height: 18,
-              borderRadius: 9,
+              width: 34, height: 18, borderRadius: 9,
               background: theme === "dark" ? "#818cf8" : "#e2e8f0",
-              position: "relative",
-              transition: "background 0.25s",
-              flexShrink: 0,
+              position: "relative", transition: "background 0.25s", flexShrink: 0,
             }}
           >
             <div
               style={{
-                width: 14,
-                height: 14,
-                borderRadius: "50%",
-                background: "white",
-                position: "absolute",
-                top: 2,
-                left: theme === "dark" ? 18 : 2,
-                transition: "left 0.25s",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                width: 14, height: 14, borderRadius: "50%", background: "white",
+                position: "absolute", top: 2, left: theme === "dark" ? 18 : 2,
+                transition: "left 0.25s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
               }}
             />
           </div>
         </button>
+
+        <button
+          onClick={handleLogout}
+          style={{
+            ...actionButtonStyle,
+            border: "1px solid #fecaca",
+            marginBottom: "0.8rem",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "white"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+        >
+          <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "inherit", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <LogOut size={14} color="#ef4444" />
+            <span style={{ color: "#ef4444" }}>Dasturdan chiqish</span>
+          </span>
+        </button>
+
         <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontWeight: 600 }}>© 2026 Korzinka ERP</div>
         <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "0.15rem" }}>v1.0.0 · Premium</div>
       </div>
     </aside>
   );
 }
+
+const actionButtonStyle = {
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "0.55rem 0.8rem",
+  borderRadius: "10px",
+  background: "var(--bg-hover)",
+  cursor: "pointer",
+  marginBottom: "0.6rem",
+  transition: "all 0.2s",
+};
