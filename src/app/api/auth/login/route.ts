@@ -34,10 +34,10 @@ export async function POST(req: NextRequest) {
       name: "session",
       value: session,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true, // Must be true inside Telegram Mini Apps/iFrames
       expires: expires,
       path: "/",
-      sameSite: "lax",
+      sameSite: "none", // Must be "none" for cross-context Mini App embeds
     });
 
     return response;
