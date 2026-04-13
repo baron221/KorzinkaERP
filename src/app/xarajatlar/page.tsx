@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Receipt, Edit3, Trash2 } from "lucide-react";
+import { Plus, X, Receipt, Edit3, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
 import NumericInput from "@/components/NumericInput";
 import { fmtAmount } from "@/lib/utils";
@@ -31,6 +31,7 @@ export default function XarajatlarPage() {
   const [total, setTotal] = useState(0);
   const [byCategory, setByCategory] = useState<Record<string, number>>({});
   const [showAdd, setShowAdd] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [loading, setLoading] = useState(true);
 
@@ -72,16 +73,6 @@ export default function XarajatlarPage() {
         </div>
       </div>
 
-      {/* Category breakdown */}
-      <div className="grid-4" style={{ marginBottom: "1.5rem" }}>
-        {Object.entries(CATEGORIES).map(([cat, meta]) => (
-          <div key={cat} className="stat-card" style={{ borderLeft: `3px solid ${meta.color}` }}>
-            <div className="stat-label">{meta.emoji} {meta.label}</div>
-            <div className="stat-value" style={{ fontSize: "1.1rem" }}>{fmtAmount(byCategory[cat] ?? 0)}</div>
-          </div>
-        ))}
-      </div>
-
       {/* Total */}
       <div className="card" style={{ marginBottom: "1.5rem", borderLeft: "3px solid #ef4444", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
@@ -96,39 +87,115 @@ export default function XarajatlarPage() {
       ) : expenses.length === 0 ? (
         <div className="empty-state"><Receipt size={48} /><div>Bu oyda xarajat kiritilmagan</div></div>
       ) : (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Sana</th>
-                <th>Kategoriya</th>
-                <th>Summa</th>
-                <th>Izoh</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map((e) => {
-                const meta = CATEGORIES[e.category];
-                return (
-                  <tr key={e.id}>
-                    <td className="text-muted">{new Date(e.date).toLocaleDateString("uz-UZ")}</td>
-                    <td>
-                      <span className="badge" style={{ background: `${meta?.color}20`, color: meta?.color }}>
-                        {meta?.emoji} {meta?.label ?? e.category}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: 700, color: "var(--accent-red)" }}>{fmtAmount(e.amount)}</td>
-                    <td className="text-muted">{e.notes ?? "—"}</td>
-                    <td>
-                      <button className="btn btn-sm" onClick={() => handleDelete("expense", e.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          {Object.entries(CATEGORIES).map(([cat, meta]) => {
+            const catExpenses = expenses.filter(e => e.category === cat);
+            const isOpen = expandedCategory === cat;
+            const bgLight = `${meta.color}15`; // ~8% opacity hex equivalent
+            const borderCol = isOpen ? meta.color : `${meta.color}30`;
+
+            return (
+              <div 
+                key={cat}
+                style={{
+                  background: "white",
+                  border: `1.5px solid ${borderCol}`,
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                  boxShadow: isOpen ? `0 4px 16px ${bgLight}` : "0 1px 4px rgba(0,0,0,0.04)",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                {/* Header (Click to expand) */}
+                <div
+                  onClick={() => setExpandedCategory(isOpen ? null : cat)}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "1.1rem 1.5rem", cursor: "pointer",
+                    background: isOpen ? bgLight : "white",
+                    transition: "background 0.2s ease"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 12,
+                      background: bgLight, display: "flex", alignItems: "center",
+                      justifyContent: "center", flexShrink: 0, fontSize: "1.2rem"
+                    }}>
+                      {meta.emoji}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--text-primary)" }}>
+                        {meta.label}
+                      </div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "0.1rem" }}>
+                        {catExpenses.length} ta xarajat
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <div style={{
+                      background: bgLight, color: meta.color, fontWeight: 800,
+                      fontSize: "1.1rem", padding: "0.4rem 1rem", borderRadius: "10px"
+                    }}>
+                      {fmtAmount(byCategory[cat] ?? 0)}
+                    </div>
+                    {isOpen ? <ChevronUp size={18} color={meta.color} /> : <ChevronDown size={18} color="var(--text-secondary)" />}
+                  </div>
+                </div>
+
+                {/* Expanded Table area */}
+                {isOpen && (
+                  <div style={{ borderTop: `1px solid ${borderCol}`, background: "#fafafa" }}>
+                    {catExpenses.length === 0 ? (
+                      <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.85rem" }}>
+                        Bu kategoriya bo'yicha xarajat topilmadi
+                      </div>
+                    ) : (
+                      <div style={{ padding: "1rem 1.5rem" }}>
+                        <div className="table-wrapper" style={{ background: "white", borderRadius: "12px", overflow: "hidden", border: `1px solid ${borderCol}`, marginBottom: 0 }}>
+                          <table style={{ marginBottom: 0 }}>
+                            <thead>
+                              <tr>
+                                <th>Sana</th>
+                                <th>Summa</th>
+                                <th>Izoh</th>
+                                <th style={{ textAlign: "right" }}></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {catExpenses.map(e => (
+                                <tr key={e.id}>
+                                  <td className="text-muted" style={{ fontSize: "0.82rem" }}>
+                                    {new Date(e.date).toLocaleDateString("uz-UZ")}
+                                  </td>
+                                  <td style={{ fontWeight: 700, color: "var(--accent-red)" }}>
+                                    {fmtAmount(e.amount)}
+                                  </td>
+                                  <td className="text-muted" style={{ fontSize: "0.82rem" }}>
+                                    {e.notes ?? "—"}
+                                  </td>
+                                  <td style={{ textAlign: "right", verticalAlign: "middle" }}>
+                                    <button 
+                                      className="btn btn-sm" 
+                                      onClick={(ev) => { ev.stopPropagation(); handleDelete("expense", e.id); }} 
+                                      style={{ color: "var(--accent-red)", padding: "0.4rem", opacity: 0.7 }}
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
