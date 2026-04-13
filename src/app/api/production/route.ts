@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   const batches = await prisma.productionBatch.findMany({
     include: { items: true },
-    orderBy: { date: "desc" },
+    orderBy: [{ date: "desc" }, { id: "desc" }],
   });
   return NextResponse.json(batches);
 }

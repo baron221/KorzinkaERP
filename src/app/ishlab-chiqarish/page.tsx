@@ -171,7 +171,11 @@ export default function IslabChiqarishPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {group.rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((row, idx) => (
+                              {group.rows.sort((a, b) => {
+                                const d = new Date(b.date).getTime() - new Date(a.date).getTime();
+                                if (d !== 0) return d;
+                                return b.batchId - a.batchId;
+                              }).map((row, idx) => (
                                 <tr key={idx}>
                                   <td className="text-muted" style={{ fontSize: "0.82rem" }}>{new Date(row.date).toLocaleDateString("uz-UZ")}</td>
                                   <td style={{ fontWeight: 700, color: c.color }}>{row.count} ta</td>
