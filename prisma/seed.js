@@ -5,14 +5,15 @@ const prisma = new PrismaClient();
 
 async function main() {
   const adminUsername = "admin";
-  const adminPassword = "KorzinkaAdmin2026!";
+  const adminPassword = "korzinka77";
+
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
   const existingAdmin = await prisma.user.findUnique({
     where: { username: adminUsername },
   });
 
   if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
     await prisma.user.create({
       data: {
         username: adminUsername,
@@ -22,7 +23,11 @@ async function main() {
     });
     console.log(`\n✅ Boshlang'ich direktor yaratildi.\n👉 Login: ${adminUsername}\n👉 Parol: ${adminPassword}\n`);
   } else {
-    console.log("\n✅ Boshlang'ich direktor tizimda mavjud.\n");
+    await prisma.user.update({
+      where: { username: adminUsername },
+      data: { password: hashedPassword }
+    });
+    console.log(`\n✅ Direktor paroli yangilandi.\n👉 Yangi parol: ${adminPassword}\n`);
   }
 }
 
