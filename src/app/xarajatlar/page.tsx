@@ -23,6 +23,7 @@ const CATEGORIES: Record<string, { label: string; emoji: string; color: string }
   WAGES: { label: "Ishchilar oyligi", emoji: "👷", color: "#6366f1" },
   FOOD: { label: "Ovqatlanish", emoji: "🍱", color: "#10b981" },
   MISC: { label: "Mayda xarajatlar", emoji: "📎", color: "#94a3b8" },
+  PERSONAL: { label: "Shaxsiy xarajatlar", emoji: "👤", color: "#ec4899" },
 };
 
 
@@ -75,9 +76,17 @@ export default function XarajatlarPage() {
 
       {/* Total */}
       <div className="card" style={{ marginBottom: "1.5rem", borderLeft: "3px solid #ef4444", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Jami Xarajat ({month})</div>
-          <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--accent-red)" }}>{fmtAmount(total)}</div>
+        <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Biznes Xarajatlar ({month})</div>
+            <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--accent-red)" }}>{fmtAmount(total - (byCategory["PERSONAL"] ?? 0))}</div>
+          </div>
+          {(byCategory["PERSONAL"] ?? 0) > 0 && (
+            <div>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Shaxsiy Xarajatlar</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#ec4899" }}>{fmtAmount(byCategory["PERSONAL"] ?? 0)}</div>
+            </div>
+          )}
         </div>
         <Receipt size={32} style={{ color: "var(--accent-red)", opacity: 0.4 }} />
       </div>

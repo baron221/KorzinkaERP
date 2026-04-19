@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Majburiy maydonlar" }, { status: 400 });
   }
 
-  const VALID_CATEGORIES = ["ELECTRICITY", "WAGES", "FOOD", "MISC"];
+  const VALID_CATEGORIES = ["ELECTRICITY", "WAGES", "FOOD", "MISC", "PERSONAL"];
   if (!VALID_CATEGORIES.includes(category)) {
     return NextResponse.json({ error: "Noto'g'ri kategoriya" }, { status: 400 });
   }
