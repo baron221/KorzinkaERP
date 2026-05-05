@@ -15,7 +15,7 @@ interface Customer {
   name: string;
   phone: string | null;
   address: string | null;
-  sales: Array<{ totalAmount: number; paidAmount: number; debtAmount: number; items?: Array<{ size: number; count: number }> }>;
+  sales: Array<{ date: string; totalAmount: number; paidAmount: number; debtAmount: number; items?: Array<{ size: number; count: number }> }>;
   customerPayments?: Array<{ amount: number }>;
 }
 interface Stock {
