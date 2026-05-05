@@ -27,26 +27,26 @@ model Supplier {
 }
 
 model RawMaterial {
-  id           Int      @id @default(autoincrement())
-  supplierId   Int
-  date         DateTime @default(now())
-  weightKg     Float    // amount received in kg
-  pricePerKg   Float    // price per kg
-  totalAmount  Float    // weightKg * pricePerKg
-  paidAmount   Float    @default(0) // amount paid to supplier
-  debtAmount   Float    @default(0) // totalAmount - paidAmount (auto-computed but stored)
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  supplierId  Int
+  date        DateTime @default(now())
+  weightKg    Float // amount received in kg
+  pricePerKg  Float // price per kg
+  totalAmount Float // weightKg * pricePerKg
+  paidAmount  Float    @default(0) // amount paid to supplier
+  debtAmount  Float    @default(0) // totalAmount - paidAmount (auto-computed but stored)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  supplier Supplier @relation(fields: [supplierId], references: [id])
+  supplier         Supplier          @relation(fields: [supplierId], references: [id])
   supplierPayments SupplierPayment[]
 }
 
 model SupplierPayment {
   id            Int      @id @default(autoincrement())
   supplierId    Int
-  rawMaterialId Int?     // optional: link to specific batch
+  rawMaterialId Int? // optional: link to specific batch
   amount        Float
   date          DateTime @default(now())
   notes         String?
@@ -60,23 +60,23 @@ model SupplierPayment {
 // MODULE 2: ISHLAB CHIQARISH (Production)
 // ============================================================
 model ProductionBatch {
-  id          Int      @id @default(autoincrement())
-  date        DateTime @default(now())
-  rawUsedKg   Float    // raw material used in kg
-  totalBaskets Int     @default(0) // total baskets produced
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  date         DateTime @default(now())
+  rawUsedKg    Float // raw material used in kg
+  totalBaskets Int      @default(0) // total baskets produced
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   items ProductionItem[]
 }
 
 model ProductionItem {
-  id          Int    @id @default(autoincrement())
+  id          Int   @id @default(autoincrement())
   batchId     Int
-  size        Int    // 12, 14, or 16
-  count       Int    // number of baskets
-  weightGrams Float  // weight per basket in grams
+  size        Int // 12, 14, or 16
+  count       Int // number of baskets
+  weightGrams Float // weight per basket in grams
 
   batch ProductionBatch @relation(fields: [batchId], references: [id])
 }
@@ -101,22 +101,22 @@ model Sale {
   id          Int      @id @default(autoincrement())
   customerId  Int
   date        DateTime @default(now())
-  totalAmount Float    // total sale amount
+  totalAmount Float // total sale amount
   paidAmount  Float    @default(0) // paid at time of sale
   debtAmount  Float    @default(0) // totalAmount - paidAmount
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  customer  Customer   @relation(fields: [customerId], references: [id])
-  items     SaleItem[]
-  payments  CustomerPayment[]
+  customer Customer          @relation(fields: [customerId], references: [id])
+  items    SaleItem[]
+  payments CustomerPayment[]
 }
 
 model SaleItem {
   id        Int   @id @default(autoincrement())
   saleId    Int
-  size      Int   // 12, 14, or 16
+  size      Int // 12, 14, or 16
   count     Int
   unitPrice Float // price per basket for this customer/sale
   subtotal  Float // count * unitPrice
@@ -127,7 +127,7 @@ model SaleItem {
 model CustomerPayment {
   id         Int      @id @default(autoincrement())
   customerId Int
-  saleId     Int?     // optional: link to specific sale
+  saleId     Int? // optional: link to specific sale
   amount     Float
   date       DateTime @default(now())
   notes      String?
@@ -141,13 +141,13 @@ model CustomerPayment {
 // MODULE 4: XARAJATLAR (Expenses)
 // ============================================================
 model Expense {
-  id        Int          @id @default(autoincrement())
-  date      DateTime     @default(now())
-  category  String       // ELECTRICITY | WAGES | FOOD | MISC | PERSONAL
+  id        Int      @id @default(autoincrement())
+  date      DateTime @default(now())
+  category  String // ELECTRICITY | WAGES | FOOD | MISC | PERSONAL
   amount    Float
   notes     String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ============================================================
@@ -155,8 +155,8 @@ model Expense {
 // ============================================================
 model StockSnapshot {
   id          Int      @id @default(autoincrement())
-  rawStockKg  Float    @default(0)  // current raw material in kg
-  size12Count Int      @default(0)  // finished baskets by size
+  rawStockKg  Float    @default(0) // current raw material in kg
+  size12Count Int      @default(0) // finished baskets by size
   size14Count Int      @default(0)
   size16Count Int      @default(0)
   updatedAt   DateTime @updatedAt
@@ -167,10 +167,10 @@ model StockSnapshot {
 // ============================================================
 model ActivityLog {
   id        Int      @id @default(autoincrement())
-  action    String   // "DELETE" | "CREATE"
-  entity    String   // "Sale" | "Expense" | "RawMaterial" | "Production" | "SupplierPayment" | "CustomerPayment"
+  action    String // "DELETE" | "CREATE"
+  entity    String // "Sale" | "Expense" | "RawMaterial" | "Production" | "SupplierPayment" | "CustomerPayment"
   entityId  Int
-  snapshot  Json     // full data snapshot at time of action
+  snapshot  Json // full data snapshot at time of action
   createdAt DateTime @default(now())
 }
 
@@ -180,7 +180,7 @@ model ActivityLog {
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
-  password  String   // Hashed via bcryptjs
+  password  String // Hashed via bcryptjs
   role      String   @default("DIRECTOR")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

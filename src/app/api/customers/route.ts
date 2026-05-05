@@ -9,6 +9,7 @@ export async function GET() {
           orderBy: { date: "desc" },
           include: { items: true },
         },
+        customerPayments: true,
       },
       orderBy: { createdAt: "desc" },
     });

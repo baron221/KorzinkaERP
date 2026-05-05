@@ -122,6 +122,19 @@ export async function POST(req: NextRequest) {
       include: { items: true, customer: true },
     });
 
+    // Create CustomerPayment for upfront payment
+    if (paid > 0) {
+      await prisma.customerPayment.create({
+        data: {
+          customerId: parseInt(customerId),
+          saleId: sale.id,
+          amount: paid,
+          date: date ? new Date(date) : new Date(),
+          notes: "Savdo vaqtidagi to'lov",
+        },
+      });
+    }
+
     await prisma.activityLog.create({
       data: {
         action: "CREATE",

@@ -16,6 +16,7 @@ interface Customer {
   phone: string | null;
   address: string | null;
   sales: Array<{ totalAmount: number; paidAmount: number; debtAmount: number; items?: Array<{ size: number; count: number }> }>;
+  customerPayments?: Array<{ amount: number }>;
 }
 interface Stock {
   size12Count: number;
@@ -163,7 +164,8 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
             <tbody>
               {customers.map((c) => {
                 const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
-                const totalDebt = c.sales.reduce((s, sale) => s + sale.debtAmount, 0);
+                const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
+                const balance = totalBuy - totalPaid;
                 let r12 = 0, r14 = 0, r16 = 0;
                 c.sales.forEach(sale => {
                   sale.items?.forEach(item => {
@@ -192,7 +194,15 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                       )}
                     </td>
                     <td>{fmtAmount(totalBuy)}</td>
-                    <td>{totalDebt > 0 ? <span className="badge badge-red">{fmtAmount(totalDebt)}</span> : <span className="badge badge-green">✓</span>}</td>
+                    <td>
+                      {balance > 0 ? (
+                        <span className="badge badge-red">Qarz: {fmtAmount(balance)}</span>
+                      ) : balance < 0 ? (
+                        <span className="badge badge-green">Haqdor: {fmtAmount(Math.abs(balance))}</span>
+                      ) : (
+                        <span className="badge badge-green">✓</span>
+                      )}
+                    </td>
                     <td>
                       <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); onDelete("customer", c.id); }} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
                         <Trash2 size={16} />
@@ -278,12 +288,15 @@ function DebtList({ customers }: { customers: Customer[] }) {
         <thead><tr><th>Mijoz</th><th>Telefon</th><th>Jami Qarz</th></tr></thead>
         <tbody>
           {customers.map((c) => {
-            const debt = c.sales.reduce((s, sale) => s + sale.debtAmount, 0);
+            const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
+            const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
+            const balance = totalBuy - totalPaid;
+            if (balance <= 0) return null;
             return (
               <tr key={c.id}>
                 <td style={{ fontWeight: 600 }}>{c.name}</td>
                 <td className="text-muted">{c.phone ?? "—"}</td>
-                <td><span className="badge badge-red" style={{ fontSize: "0.85rem", padding: "0.3rem 0.7rem" }}>{fmtAmount(debt)}</span></td>
+                <td><span className="badge badge-red" style={{ fontSize: "0.85rem", padding: "0.3rem 0.7rem" }}>{fmtAmount(balance)}</span></td>
               </tr>
             );
           })}
@@ -528,7 +541,6 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
   let history: any[] = [];
   if (data) {
     data.sales?.forEach((s: any) => {
-      // 1. Log the full sale as a debt increase
       history.push({
         type: "sale",
         id: `s-${s.id}`,
@@ -538,18 +550,9 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
         items: s.items,
         notes: `🛒 Savdo (Mahsulot berildi)`,
       });
-      // 2. If they paid something upfront during this sale, log it as an immediate payment
-      if (s.paidAmount > 0) {
-        history.push({
-          type: "payment",
-          id: `sp-${s.id}`, // specific prefix to avoid collision
-          date: s.date,
-          // Give it a fake tiny offset so it securely sorts exactly after the sale itself
-          createdAt: new Date(new Date(s.createdAt).getTime() + 10).toISOString(),
-          amount: s.paidAmount,
-          notes: "💸 Savdo vaqtidagi to'lov",
-        });
-      }
+      // NOTE: We no longer add s.paidAmount to history here 
+      // because all payments (including upfront ones) are now 
+      // represented in data.customerPayments.
     });
     data.customerPayments?.forEach((p: any) => {
       history.push({
