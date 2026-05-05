@@ -639,15 +639,31 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
       });
     });
 
-    // Sort chronologically using precise creation time
+    // Sort chronologically: Business date first, then use createdAt for precise timing
     history.sort((a, b) => {
-      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
-      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
+      const timeA = new Date(a.createdAt || a.date).getTime();
+      const timeB = new Date(b.createdAt || b.date).getTime();
       return timeA - timeB;
     });
   }
 
   let runningBalance = 0;
+
+  const formatDateTime = (dateStr: string, createdAt?: string) => {
+    const d = new Date(dateStr);
+    const datePart = d.toLocaleDateString("uz-UZ");
+    if (createdAt) {
+      const c = new Date(createdAt);
+      const timePart = c.toLocaleTimeString("uz-UZ", { hour: '2-digit', minute: '2-digit' });
+      return (
+        <div style={{ display: "flex", flexDirection: "column", fontSize: "0.85rem" }}>
+          <span>{datePart}</span>
+          <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>{timePart}</span>
+        </div>
+      );
+    }
+    return datePart;
+  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -666,7 +682,7 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
             <table style={{ width: "100%", textAlign: "left" }}>
               <thead style={{ position: "sticky", top: 0, background: "var(--bg-secondary)", zIndex: 1 }}>
                 <tr>
-                  <th>Sana</th>
+                  <th>Sana / Vaqt</th>
                   <th>Amaliyot (Razmerlar)</th>
                   <th style={{ textAlign: "right" }}>Sotildi (Qarz)</th>
                   <th style={{ textAlign: "right" }}>To'lov (Keldi)</th>
@@ -683,7 +699,7 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
 
                     return (
                       <tr key={h.id}>
-                        <td className="text-muted">{new Date(h.date).toLocaleDateString("uz-UZ")}</td>
+                        <td>{formatDateTime(h.date, h.createdAt)}</td>
                         <td>
                           <div style={{ color: h.type === "payment" ? "var(--accent-green)" : "inherit", marginBottom: h.items ? "0.25rem" : "0" }}>
                             {h.notes}

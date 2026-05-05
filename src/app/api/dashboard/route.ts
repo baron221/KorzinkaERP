@@ -141,24 +141,37 @@ export async function GET(req: NextRequest) {
 
     const totalRevAmount = filteredSaleAgg._sum.totalAmount ?? 0;
 
-    // ==============================================
-    // GLOBAL (ALL-TIME) PROFIT CALCULATION
-    // ==============================================
-    const allTimeSaleAgg = await prisma.sale.aggregate({
-      _sum: { totalAmount: true }
+    const customers = await prisma.customer.findMany({
+      include: {
+        sales: { select: { totalAmount: true } },
+        customerPayments: { select: { amount: true } },
+      }
     });
+
+    let totalCustomerDebt = 0;
+    let totalCustomerCredit = 0;
+    let customersWithDebt = 0;
+    let customersWithCredit = 0;
+
+    customers.forEach(c => {
+      const totalBuy = c.sales.reduce((sum, s) => sum + s.totalAmount, 0);
+      const totalPaid = c.customerPayments.reduce((sum, p) => sum + p.amount, 0);
+      const balance = totalBuy - totalPaid;
+      if (balance > 0) {
+        totalCustomerDebt += balance;
+        customersWithDebt++;
+      } else if (balance < 0) {
+        totalCustomerCredit += Math.abs(balance);
+        customersWithCredit++;
+      }
+    });
+
+    // Restore Profit calculation
+    const allTimeSaleAgg = await prisma.sale.aggregate({ _sum: { totalAmount: true } });
     const allTimeRev = allTimeSaleAgg._sum.totalAmount ?? 0;
-
-    const allTimeExpAgg = await prisma.expense.aggregate({
-      _sum: { amount: true }
-    });
+    const allTimeExpAgg = await prisma.expense.aggregate({ _sum: { amount: true } });
     const allTimeExp = allTimeExpAgg._sum.amount ?? 0;
-
-    const allTimeSoldAgg = await prisma.saleItem.groupBy({
-      by: ["size"],
-      _sum: { count: true },
-    });
-
+    const allTimeSoldAgg = await prisma.saleItem.groupBy({ by: ["size"], _sum: { count: true } });
     let allTimeCOGS = 0;
     allTimeSoldAgg.forEach((s) => {
       const count = s._sum.count || 0;
@@ -166,10 +179,7 @@ export async function GET(req: NextRequest) {
       const costRaw = (weightGram / 1000) * avgRawPrice;
       allTimeCOGS += count * costRaw;
     });
-
     const totalNetProfit = allTimeRev - allTimeCOGS - allTimeExp;
-
-    // Sof Foyda = Yalpi Tushum - Tannarx(COGS) - Boshqa Xarajatlar
     const netProfit = totalRevAmount - totalCOGS - totalExpAmount;
 
     const recentSales = await prisma.sale.findMany({
@@ -180,10 +190,7 @@ export async function GET(req: NextRequest) {
     });
 
     const suppliers = await prisma.supplier.findMany({
-      include: {
-        rawMaterials: true,
-        supplierPayments: true,
-      }
+      include: { rawMaterials: true, supplierPayments: true }
     });
 
     const supplierBalances = suppliers.map(s => {
@@ -200,7 +207,10 @@ export async function GET(req: NextRequest) {
       netProfit,
       totalNetProfit,
       totalPaid: filteredSaleAgg._sum.paidAmount ?? 0,
-      customerDebt: allDebtAgg._sum.debtAmount ?? 0,
+      customerDebt: totalCustomerDebt,
+      customerCredit: totalCustomerCredit,
+      debtCustomerCount: customersWithDebt,
+      creditCustomerCount: customersWithCredit,
       monthlyExpenses: expenseAgg._sum.amount ?? 0,
       deductedExpenses: totalExpAmount,
       expenseBreakdown,

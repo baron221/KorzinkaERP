@@ -12,6 +12,7 @@ import {
   ShoppingCart,
   ArrowUpRight,
   LogOut,
+  Wallet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -24,6 +25,9 @@ interface DashboardData {
   totalNetProfit: number;
   totalPaid: number;
   customerDebt: number;
+  customerCredit: number;
+  debtCustomerCount: number;
+  creditCustomerCount: number;
   monthlyExpenses: number;
   deductedExpenses: number;
   expenseBreakdown?: Array<{ category: string; _sum: { amount: number | null } }>;
@@ -104,11 +108,21 @@ export default function DashboardPage() {
     {
       label: "Mijozlar Qarzi",
       value: fmt(data.customerDebt),
-      sub: `${data.customerCount} ta mijoz`,
-      icon: Users,
-      gradient: "linear-gradient(135deg, #d97706, #f59e0b)",
-      lightBg: "#fef3c7",
-      iconColor: "#d97706",
+      sub: `${data.debtCustomerCount} ta qarzdor mijoz`,
+      icon: TrendingDown,
+      gradient: "linear-gradient(135deg, #dc2626, #ef4444)",
+      lightBg: "#fee2e2",
+      iconColor: "#dc2626",
+      href: "/mijozlar",
+    },
+    {
+      label: "Mijozlar Haqqi",
+      value: fmt(data.customerCredit),
+      sub: `${data.creditCustomerCount} ta haqdor mijoz`,
+      icon: Wallet,
+      gradient: "linear-gradient(135deg, #059669, #10b981)",
+      lightBg: "#d1fae5",
+      iconColor: "#059669",
       href: "/mijozlar",
     },
     {
