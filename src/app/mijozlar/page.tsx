@@ -176,8 +176,17 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    <div className="avatar" style={{ width: 42, height: 42, borderRadius: "12px", background: "var(--accent-primary-light)", color: "var(--accent-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "1.1rem" }}>
-                      {c.name.charAt(0).toUpperCase()}
+                    <div className="avatar" style={{ 
+                      width: 40, 
+                      height: 40, 
+                      borderRadius: "10px", 
+                      background: "rgba(79, 70, 229, 0.08)", 
+                      color: "var(--accent-primary)", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center" 
+                    }}>
+                      <Users size={20} style={{ opacity: 0.8 }} />
                     </div>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: "1.05rem" }}>{c.name}</div>
@@ -193,7 +202,7 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.1rem" }}>Balans</div>
                       {balance > 0 ? (
-                        <span className="badge badge-red" style={{ fontWeight: 700 }}>{fmtAmount(balance)}</span>
+                        <span className="badge badge-red" style={{ fontWeight: 700 }}>Qarzdor: {fmtAmount(balance)}</span>
                       ) : balance < 0 ? (
                         <span className="badge badge-green" style={{ fontWeight: 700 }}>Haqdor: {fmtAmount(Math.abs(balance))}</span>
                       ) : (
