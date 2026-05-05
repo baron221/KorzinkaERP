@@ -8,6 +8,7 @@ export async function GET() {
         orderBy: { date: "desc" },
         take: 5,
       },
+      supplierPayments: true,
     },
     orderBy: { createdAt: "desc" },
   });

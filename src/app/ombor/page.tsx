@@ -15,6 +15,8 @@ interface Supplier {
   name: string;
   phone: string | null;
   address: string | null;
+  rawMaterials: Array<{ totalAmount: number }>;
+  supplierPayments: Array<{ amount: number }>;
 }
 interface RawMaterial {
   id: number;
@@ -229,8 +231,9 @@ function SuppliersTable({ suppliers, materials, onDelete, onSelectSupplier }: { 
     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
       {suppliers.map((s) => {
         const sm = materials.filter((m) => m.supplierId === s.id);
-        const totalDebt = sm.reduce((sum, m) => sum + m.debtAmount, 0);
         const totalPurchase = sm.reduce((sum, m) => sum + m.totalAmount, 0);
+        const totalPaid = s.supplierPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+        const balance = totalPurchase - totalPaid;
         return (
           <div key={s.id} style={{ borderBottom: "1px solid var(--border)" }}>
             <div
@@ -249,8 +252,10 @@ function SuppliersTable({ suppliers, materials, onDelete, onSelectSupplier }: { 
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                {totalDebt > 0 ? (
-                  <span className="badge badge-red">Qarz: {fmtAmount(totalDebt)}</span>
+                {balance > 0 ? (
+                  <span className="badge badge-red">Qarz: {fmtAmount(balance)}</span>
+                ) : balance < 0 ? (
+                  <span className="badge badge-green">Haqdor (Avans): {fmtAmount(Math.abs(balance))}</span>
                 ) : (
                   <span className="badge badge-green">Hisob-kitob to'liq</span>
                 )}
@@ -665,42 +670,18 @@ export function SupplierDetailsModal({ supplierId, onClose }: { supplierId: numb
       });
     });
     data.supplierPayments?.forEach((p: any) => {
-      const isAutoSplit = p.notes && p.notes.includes("Avans (oldindan to'lov) hisobidan");
-
-      if (isAutoSplit) {
-        // Automatically merge legacy split pieces back into a main payment on the same exact day
-        const dateStr = new Date(p.date).toDateString();
-        const parentPayment = history.find(
-          (h) => h.type === "payment" && new Date(h.date).toDateString() === dateStr && !h.isAutoSplit
-        );
-        if (parentPayment) {
-          parentPayment.amount += p.amount; // Reconstruct the original full payment
-        } else {
-          // If no parent found, instantiate it as a reconstructed generic payment
-          history.push({
-            type: "payment",
-            id: `p-${p.id}`,
-            date: p.date,
-            createdAt: p.createdAt,
-            amount: p.amount,
-            notes: "💸 Qarz to'lovi / Avans kiritilishi",
-            isAutoSplit: false,
-          });
-        }
-      } else {
-        history.push({
-          type: "payment",
-          id: `p-${p.id}`,
-          date: p.date,
-          createdAt: p.createdAt,
-          amount: p.amount,
-          notes:
-            p.notes && p.notes.includes("Kirim vaqtidagi")
-              ? "💸 Seryo kiritilgandagi to'lov"
-              : p.notes || "💸 Qarz to'lovi / Avans kiritilishi",
-          isAutoSplit: false,
-        });
-      }
+      history.push({
+        type: "payment",
+        id: `p-${p.id}`,
+        date: p.date,
+        createdAt: p.createdAt,
+        amount: p.amount,
+        notes:
+          p.notes && p.notes.includes("Kirim vaqtidagi")
+            ? "💸 Seryo kiritilgandagi to'lov"
+            : p.notes || "💸 Qarz to'lovi / Avans kiritilishi",
+        isAutoSplit: false,
+      });
     });
     // Sort primarily by precise creation time so original avans strictly precedes materials of the same day
     history.sort((a, b) => {

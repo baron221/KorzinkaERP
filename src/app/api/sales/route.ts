@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         sum + item.count * item.unitPrice,
       0
     );
-    const paid = parseFloat(paidAmount ?? 0);
+    const paid = parseFloat(paidAmount) || 0;
     const debt = totalAmount - paid;
 
     // Check finished basket stock (Dynamic)
