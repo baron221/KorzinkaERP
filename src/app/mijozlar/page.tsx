@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Users, Search, UserPlus, ShoppingCart, Wallet, Trash2 } from "lucide-react";
+import { Plus, X, Users, Search, UserPlus, ShoppingCart, Wallet, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
 import NumericInput from "@/components/NumericInput";
 import { fmtAmount } from "@/lib/utils";
