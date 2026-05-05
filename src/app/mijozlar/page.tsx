@@ -138,81 +138,155 @@ export default function MijozlarPage() {
 }
 
 function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer }: { customers: Customer[]; search: string; setSearch: (s: string) => void; onDelete: (type: string, id: number) => void; onSelectCustomer: (id: number) => void }) {
+  const [expanded, setExpanded] = useState<number | null>(null);
+
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
-        <div className="search-bar" style={{ maxWidth: 300 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
+        <div className="search-bar" style={{ maxWidth: 400, flex: 1 }}>
           <Search size={14} className="search-icon" style={{ position: "absolute", left: "0.7rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)" }} />
-          <input className="input" style={{ paddingLeft: "2.2rem" }} placeholder="Ism yoki telefon..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input" style={{ paddingLeft: "2.2rem" }} placeholder="Ism yoki telefon orqali qidirish..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
       </div>
+
       {customers.length === 0 ? (
         <div className="empty-state"><Users size={48} /><div>Mijoz topilmadi</div></div>
       ) : (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Ism</th>
-                <th>Telefon</th>
-                <th>Xaridlar</th>
-                <th>Jami Xarid</th>
-                <th>Qarz</th>
-                <th>Amal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customers.map((c) => {
-                const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
-                const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
-                const balance = totalBuy - totalPaid;
-                let r12 = 0, r14 = 0, r16 = 0;
-                c.sales.forEach(sale => {
-                  sale.items?.forEach(item => {
-                    if (item.size === 12) r12 += item.count;
-                    if (item.size === 14) r14 += item.count;
-                    if (item.size === 16) r16 += item.count;
-                  });
-                });
-                return (
-                  <tr key={c.id}>
-                    <td 
-                      style={{ fontWeight: 600, color: "var(--accent-primary)", cursor: "pointer", textDecoration: "underline" }}
-                      onClick={() => onSelectCustomer(c.id)}
-                    >
-                      {c.name}
-                    </td>
-                    <td className="text-muted">{c.phone ?? "—"}</td>
-                    <td>
-                      <div>{c.sales.length > 0 ? `${c.sales.length} ta savdo` : "Savdo qilinmagan"}</div>
-                      {(r12 > 0 || r14 > 0 || r16 > 0) && (
-                        <div style={{ fontSize: "0.75rem", marginTop: "0.25rem", display: "flex", gap: "0.25rem", flexWrap: "wrap", alignItems: "center" }}>
-                          {r12 > 0 && <span className="badge" style={{ padding: "0.2rem 0.4rem", background: "var(--bg-secondary)" }}>R12:{r12}</span>}
-                          {r14 > 0 && <span className="badge" style={{ padding: "0.2rem 0.4rem", background: "var(--bg-secondary)" }}>R14:{r14}</span>}
-                          {r16 > 0 && <span className="badge" style={{ padding: "0.2rem 0.4rem", background: "var(--bg-secondary)" }}>R16:{r16}</span>}
-                        </div>
-                      )}
-                    </td>
-                    <td>{fmtAmount(totalBuy)}</td>
-                    <td>
+        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          {customers.map((c) => {
+            const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
+            const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
+            const balance = totalBuy - totalPaid;
+
+            let r12 = 0, r14 = 0, r16 = 0;
+            c.sales.forEach(sale => {
+              sale.items?.forEach(item => {
+                if (item.size === 12) r12 += item.count;
+                if (item.size === 14) r14 += item.count;
+                if (item.size === 16) r16 += item.count;
+              });
+            });
+
+            return (
+              <div key={c.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem", cursor: "pointer", transition: "background 0.2s" }}
+                  onClick={() => setExpanded(expanded === c.id ? null : c.id)}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-secondary)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                    <div className="avatar" style={{ width: 42, height: 42, borderRadius: "12px", background: "var(--accent-primary-light)", color: "var(--accent-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "1.1rem" }}>
+                      {c.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: "1.05rem" }}>{c.name}</div>
+                      <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <span>{c.phone ?? "Tel kiritilmagan"}</span>
+                        <span>•</span>
+                        <span>{c.sales.length} ta savdo</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "1.2rem" }}>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.1rem" }}>Balans</div>
                       {balance > 0 ? (
-                        <span className="badge badge-red">Qarz: {fmtAmount(balance)}</span>
+                        <span className="badge badge-red" style={{ fontWeight: 700 }}>{fmtAmount(balance)}</span>
                       ) : balance < 0 ? (
-                        <span className="badge badge-green">Haqdor: {fmtAmount(Math.abs(balance))}</span>
+                        <span className="badge badge-green" style={{ fontWeight: 700 }}>Haqdor: {fmtAmount(Math.abs(balance))}</span>
                       ) : (
                         <span className="badge badge-green">✓</span>
                       )}
-                    </td>
-                    <td>
-                      <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); onDelete("customer", c.id); }} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
-                        <Trash2 size={16} />
+                    </div>
+                    <div style={{ display: "flex", gap: "0.4rem" }}>
+                       <button 
+                        className="btn btn-secondary btn-sm" 
+                        onClick={(e) => { e.stopPropagation(); onSelectCustomer(c.id); }}
+                        style={{ padding: "0.4rem 0.7rem", fontSize: "0.75rem" }}
+                      >
+                        Tarix
                       </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <button 
+                        className="btn btn-sm" 
+                        onClick={(e) => { e.stopPropagation(); onDelete("customer", c.id); }} 
+                        style={{ color: "var(--accent-red)", padding: "0.4rem" }}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                      {expanded === c.id ? <ChevronUp size={20} className="text-muted" /> : <ChevronDown size={20} className="text-muted" />}
+                    </div>
+                  </div>
+                </div>
+
+                {expanded === c.id && (
+                  <div style={{ background: "var(--bg-secondary)", padding: "1rem", borderTop: "1px dashed var(--border)" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
+                      <div className="card" style={{ padding: "0.75rem", background: "var(--bg-primary)" }}>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Jami Xarid</div>
+                        <div style={{ fontWeight: 700, fontSize: "1.1rem" }}>{fmtAmount(totalBuy)}</div>
+                      </div>
+                      <div className="card" style={{ padding: "0.75rem", background: "var(--bg-primary)" }}>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>To'lovlar</div>
+                        <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--accent-green)" }}>{fmtAmount(totalPaid)}</div>
+                      </div>
+                      {(r12 > 0 || r14 > 0 || r16 > 0) && (
+                        <div className="card" style={{ padding: "0.75rem", background: "var(--bg-primary)" }}>
+                          <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Savatlar soni</div>
+                          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+                            {r12 > 0 && <span className="badge badge-blue">R12: {r12}</span>}
+                            {r14 > 0 && <span className="badge badge-blue">R14: {r14}</span>}
+                            {r16 > 0 && <span className="badge badge-blue">R16: {r16}</span>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {c.sales.length > 0 ? (
+                      <div>
+                        <div style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.5rem", color: "var(--text-secondary)" }}>Oxirgi savdolar:</div>
+                        <div className="table-wrapper" style={{ margin: 0, background: "var(--bg-primary)", borderRadius: "8px" }}>
+                          <table style={{ fontSize: "0.85rem" }}>
+                            <thead>
+                              <tr>
+                                <th>Sana</th>
+                                <th>Mahsulot</th>
+                                <th>Jami</th>
+                                <th>Holat</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {c.sales.slice(0, 3).map((s, idx) => (
+                                <tr key={idx}>
+                                  <td>{new Date(s.date).toLocaleDateString("uz-UZ")}</td>
+                                  <td>
+                                    {s.items?.map((it, i) => (
+                                      <span key={i} style={{ marginRight: "0.4rem" }}>R{it.size}×{it.count}</span>
+                                    ))}
+                                  </td>
+                                  <td style={{ fontWeight: 600 }}>{fmtAmount(s.totalAmount)}</td>
+                                  <td>
+                                    {s.debtAmount > 0 ? (
+                                      <span className="text-red">Qarz: {fmtAmount(s.debtAmount)}</span>
+                                    ) : (
+                                      <span className="text-green">To'langan ✓</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: "center", padding: "1rem", color: "var(--text-secondary)", fontSize: "0.85rem" }}>Savdo qilinmagan</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
