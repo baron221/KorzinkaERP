@@ -29,6 +29,7 @@ interface DashboardData {
   debtCustomerCount: number;
   creditCustomerCount: number;
   monthlyExpenses: number;
+  totalExpenses: number;
   deductedExpenses: number;
   expenseBreakdown?: Array<{ category: string; _sum: { amount: number | null } }>;
   supplierBalances?: Array<{ id: number; name: string; balance: number }>;
@@ -133,6 +134,16 @@ export default function DashboardPage() {
       gradient: "linear-gradient(135deg, #dc2626, #ef4444)",
       lightBg: "#fee2e2",
       iconColor: "#dc2626",
+      href: "/xarajatlar",
+    },
+    {
+      label: "Umumiy Xarajat",
+      value: fmt(data.totalExpenses),
+      sub: "Barcha davrlar uchun",
+      icon: Receipt,
+      gradient: "linear-gradient(135deg, #f59e0b, #fbbf24)",
+      lightBg: "#fef3c7",
+      iconColor: "#f59e0b",
       href: "/xarajatlar",
     },
   ];

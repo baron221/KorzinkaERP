@@ -215,6 +215,7 @@ export async function GET(req: NextRequest) {
       deductedExpenses: totalExpAmount,
       expenseBreakdown,
       supplierBalances,
+      totalExpenses: allTimeExp,
       customerCount: await prisma.customer.count(),
       supplierCount: await prisma.supplier.count(),
       recentSales,
