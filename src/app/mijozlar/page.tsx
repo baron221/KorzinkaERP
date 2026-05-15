@@ -15,7 +15,7 @@ interface Customer {
   name: string;
   phone: string | null;
   address: string | null;
-  sales: Array<{ date: string; totalAmount: number; paidAmount: number; debtAmount: number; items?: Array<{ size: number; count: number }> }>;
+  sales: Array<{ date: string; totalAmount: number; paidAmount: number; debtAmount: number; notes?: string | null; items?: Array<{ size: number; count: number }> }>;
   customerPayments?: Array<{ amount: number }>;
 }
 interface Stock {
@@ -254,6 +254,7 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                                 <th>Mahsulot</th>
                                 <th>Jami</th>
                                 <th>Holat</th>
+                                <th>Izoh</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -272,6 +273,9 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                                     ) : (
                                       <span className="text-green">To'langan ✓</span>
                                     )}
+                                  </td>
+                                  <td className="text-muted" style={{ fontSize: "0.82rem", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={s.notes ?? ""}>
+                                    {s.notes || <span style={{ opacity: 0.35 }}>—</span>}
                                   </td>
                                 </tr>
                               ))}
