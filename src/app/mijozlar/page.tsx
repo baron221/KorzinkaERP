@@ -296,6 +296,7 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
 function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void }) {
   const [sales, setSales] = useState<Array<{
     id: number; date: string; totalAmount: number; paidAmount: number; debtAmount: number; cogs: number; netProfit: number;
+    notes: string | null;
     customer: { name: string };
     items: Array<{ size: number; count: number; unitPrice: number }>;
   }>>([]);
@@ -321,6 +322,7 @@ function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void 
             <th>Qarz</th>
             <th>Tannarxi</th>
             <th>Sof Foyda</th>
+            <th>Izoh</th>
             <th>Amal</th>
           </tr>
         </thead>
@@ -341,6 +343,9 @@ function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void 
               <td>{s.debtAmount > 0 ? <span className="badge badge-red">{fmtAmount(s.debtAmount)}</span> : <span className="badge badge-green">✓</span>}</td>
               <td className="text-muted">{fmtAmount(s.cogs)}</td>
               <td style={{ fontWeight: 700, color: "var(--accent-cyan)" }}>{fmtAmount(s.netProfit)}</td>
+              <td className="text-muted" style={{ fontSize: "0.85rem", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={s.notes ?? ""}>
+                {s.notes || <span style={{ opacity: 0.35 }}>—</span>}
+              </td>
               <td>
                 <button className="btn btn-sm" onClick={() => onDelete("sale", s.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
                   <Trash2 size={16} />
@@ -622,7 +627,7 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
         createdAt: s.createdAt,
         amount: s.totalAmount, 
         items: s.items,
-        notes: `🛒 Savdo (Mahsulot berildi)`,
+        notes: s.notes ? `🛒 Savdo — ${s.notes}` : `🛒 Savdo (Mahsulot berildi)`,
       });
       // NOTE: We no longer add s.paidAmount to history here 
       // because all payments (including upfront ones) are now 
