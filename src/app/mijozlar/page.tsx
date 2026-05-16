@@ -793,10 +793,28 @@ function EditSaleModal({ saleId, onClose, onSuccess }: {
   const { showToast } = useToast();
 
   useEffect(() => {
+    const safeFetch = async (url: string) => {
+      const r = await fetch(url, { credentials: "include" });
+      if (!r.ok) {
+        if (r.status === 401 || r.status === 403) {
+          window.location.href = "/login";
+          throw new Error("Unauthorized");
+        }
+        // HTML redirect bo'lsa (login sahifasi)
+        const text = await r.text();
+        if (text.startsWith("<!DOCTYPE") || text.startsWith("<html")) {
+          window.location.href = "/login";
+          throw new Error("Session expired");
+        }
+        throw new Error(`HTTP ${r.status}`);
+      }
+      return r.json();
+    };
+
     Promise.all([
-      fetch(`/api/sales/${saleId}`).then(r => r.json()),
-      fetch("/api/customers").then(r => r.json()),
-      fetch("/api/dashboard").then(r => r.json()),
+      safeFetch(`/api/sales/${saleId}`),
+      safeFetch("/api/customers"),
+      safeFetch("/api/dashboard"),
     ]).then(([sale, custs, dash]) => {
       setCustomers(custs);
       setStock(dash.stock);
@@ -810,6 +828,11 @@ function EditSaleModal({ saleId, onClose, onSuccess }: {
       setNotes(sale.notes || "");
       setDate(new Date(sale.date).toISOString().slice(0, 10));
       setLoading(false);
+    }).catch((err) => {
+      if (err.message !== "Unauthorized" && err.message !== "Session expired") {
+        setError("Ma'lumotlarni yuklashda xatolik. Sahifani yangilang.");
+        setLoading(false);
+      }
     });
   }, [saleId]);
 
