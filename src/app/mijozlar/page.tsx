@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Users, Search, UserPlus, ShoppingCart, Wallet, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, X, Users, Search, UserPlus, ShoppingCart, Wallet, Trash2, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import MobileFab from "@/components/MobileFab";
 import NumericInput from "@/components/NumericInput";
 import { fmtAmount } from "@/lib/utils";
@@ -310,19 +310,23 @@ function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void 
   const [sales, setSales] = useState<Array<{
     id: number; date: string; totalAmount: number; paidAmount: number; debtAmount: number; cogs: number; netProfit: number;
     notes: string | null;
-    customer: { name: string };
+    customer: { id: number; name: string };
     items: Array<{ size: number; count: number; unitPrice: number }>;
   }>>([]);
   const [loading, setLoading] = useState(true);
+  const [editSaleId, setEditSaleId] = useState<number | null>(null);
 
-  useEffect(() => {
+  const loadSales = () => {
     fetch("/api/sales").then(r => r.json()).then(d => { setSales(d); setLoading(false); });
-  }, []);
+  };
+
+  useEffect(() => { loadSales(); }, []);
 
   if (loading) return <div style={{ color: "var(--text-secondary)", textAlign: "center", padding: "2rem" }}>Yuklanmoqda...</div>;
   if (sales.length === 0) return <div className="empty-state"><div>Hali savdo kiritilmagan</div></div>;
 
   return (
+    <>
     <div className="table-wrapper">
       <table>
         <thead>
@@ -360,15 +364,33 @@ function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void 
                 {s.notes || <span style={{ opacity: 0.35 }}>—</span>}
               </td>
               <td>
-                <button className="btn btn-sm" onClick={() => onDelete("sale", s.id)} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
-                  <Trash2 size={16} />
-                </button>
+                <div style={{ display: "flex", gap: "0.25rem" }}>
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => setEditSaleId(s.id)}
+                    style={{ color: "var(--accent-primary)", padding: "0.4rem" }}
+                    title="Tahrirlash"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button className="btn btn-sm" onClick={() => { onDelete("sale", s.id); loadSales(); }} style={{ color: "var(--accent-red)", padding: "0.4rem" }}>
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+    {editSaleId && (
+      <EditSaleModal
+        saleId={editSaleId}
+        onClose={() => setEditSaleId(null)}
+        onSuccess={() => { setEditSaleId(null); loadSales(); }}
+      />
+    )}
+    </>
   );
 }
 
@@ -756,6 +778,179 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
               </tbody>
             </table>
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EditSaleModal({ saleId, onClose, onSuccess }: {
+  saleId: number;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [customers, setCustomers] = useState<Array<{ id: number; name: string }>>([]);
+  const [stock, setStock] = useState<Stock | null>(null);
+  const [customerId, setCustomerId] = useState("");
+  const [items, setItems] = useState<Array<{ size: number; count: number; unitPrice: number }>>([]);
+  const [paidAmount, setPaidAmount] = useState("");
+  const [notes, setNotes] = useState("");
+  const [date, setDate] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    const safeFetch = async (url: string) => {
+      const r = await fetch(url, { credentials: "include" });
+      if (!r.ok) {
+        if (r.status === 401 || r.status === 403) {
+          window.location.href = "/login";
+          throw new Error("Unauthorized");
+        }
+        // HTML redirect bo'lsa (login sahifasi)
+        const text = await r.text();
+        if (text.startsWith("<!DOCTYPE") || text.startsWith("<html")) {
+          window.location.href = "/login";
+          throw new Error("Session expired");
+        }
+        throw new Error(`HTTP ${r.status}`);
+      }
+      return r.json();
+    };
+
+    Promise.all([
+      safeFetch(`/api/sales/${saleId}`),
+      safeFetch("/api/customers"),
+      safeFetch("/api/dashboard"),
+    ]).then(([sale, custs, dash]) => {
+      setCustomers(custs);
+      setStock(dash.stock);
+      setCustomerId(String(sale.customerId));
+      setItems(sale.items.map((i: { size: number; count: number; unitPrice: number }) => ({
+        size: i.size,
+        count: i.count,
+        unitPrice: i.unitPrice,
+      })));
+      setPaidAmount(String(sale.paidAmount));
+      setNotes(sale.notes || "");
+      setDate(new Date(sale.date).toISOString().slice(0, 10));
+      setLoading(false);
+    }).catch((err) => {
+      if (err.message !== "Unauthorized" && err.message !== "Session expired") {
+        setError("Ma'lumotlarni yuklashda xatolik. Sahifani yangilang.");
+        setLoading(false);
+      }
+    });
+  }, [saleId]);
+
+  const totalAmount = items.reduce((s, i) => s + i.count * i.unitPrice, 0);
+  const debt = totalAmount - parseFloat(paidAmount || "0");
+
+  const addItem = () => setItems([...items, { size: 12, count: 0, unitPrice: 0 }]);
+  const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i));
+  const updateItem = (i: number, field: string, val: string) =>
+    setItems(items.map((item, idx) => idx === i ? { ...item, [field]: field === "size" ? parseInt(val) : parseFloat(val) || 0 } : item));
+
+  const submit = async () => {
+    if (!customerId) { setError("Mijozni tanlang"); return; }
+    const filtered = items.filter(i => i.count > 0 && i.unitPrice > 0);
+    if (filtered.length === 0) { setError("Kamida bitta mahsulot kiriting"); return; }
+    setSaving(true); setError("");
+    const res = await fetch(`/api/sales/${saleId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customerId, items: filtered, paidAmount, notes, date }),
+    });
+    if (!res.ok) { const d = await res.json(); setError(d.error); setSaving(false); return; }
+    showToast("Savdo muvaffaqiyatli yangilandi!");
+    onSuccess();
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 580 }}>
+        <div className="modal-title">
+          <span>✏️ Savdoni Tahrirlash #{saleId}</span>
+          <button className="btn btn-secondary btn-sm" onClick={onClose}><X size={14} /></button>
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Yuklanmoqda...</div>
+        ) : (
+          <>
+            {error && <div className="alert alert-danger" style={{ marginBottom: "1rem" }}>{error}</div>}
+            {stock && (
+              <div className="alert alert-warning" style={{ marginBottom: "1rem" }}>
+                Ombor: R12: <strong>{stock.size12Count}</strong> | R14: <strong>{stock.size14Count}</strong> | R16: <strong>{stock.size16Count}</strong>
+                <span style={{ fontSize: "0.75rem", marginLeft: "0.5rem", opacity: 0.7 }}>(eski savdo hisobga olinmagan)</span>
+              </div>
+            )}
+
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Mijoz *</label>
+                <select className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+                  <option value="">Tanlang...</option>
+                  {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label>Sana</label><input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+            </div>
+
+            <div style={{ marginBottom: "0.75rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                <label style={{ marginBottom: 0 }}>Mahsulotlar</label>
+                <button className="btn btn-secondary btn-sm" onClick={addItem}><Plus size={12} /> Qo'shish</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 1fr auto", gap: "0.4rem", marginBottom: "0.25rem" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Razmer</span>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Soni (ta)</span>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Narx (1 ta)</span>
+                <span />
+              </div>
+              {items.map((item, i) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "120px 1fr 1fr auto", gap: "0.5rem", marginBottom: "0.5rem", alignItems: "center" }}>
+                  <select className="input" value={item.size} onChange={(e) => updateItem(i, "size", e.target.value)}>
+                    <option value={12}>Razmer 12</option>
+                    <option value={14}>Razmer 14</option>
+                    <option value={16}>Razmer 16</option>
+                  </select>
+                  <div><NumericInput value={item.count || ""} onChange={(val) => updateItem(i, "count", val)} allowDecimals={false} placeholder="0" /></div>
+                  <div>
+                    <NumericInput value={item.unitPrice || ""} onChange={(val) => updateItem(i, "unitPrice", val)} placeholder="Narx" />
+                    {item.unitPrice > 0 && <div style={{ fontSize: "0.65rem", color: "var(--accent-primary)", marginTop: "2px" }}>{fmtAmount(item.unitPrice)}</div>}
+                  </div>
+                  <button className="btn btn-danger btn-sm" onClick={() => removeItem(i)} style={{ padding: "0.35rem" }}><X size={12} /></button>
+                </div>
+              ))}
+            </div>
+
+            {totalAmount > 0 && (
+              <div className="alert alert-success" style={{ marginBottom: "1rem" }}>
+                Jami: <strong>{fmtAmount(totalAmount)}</strong>
+                {debt > 0 && <> | Qarz qoladi: <strong style={{ color: "var(--accent-red)" }}>{fmtAmount(debt)}</strong></>}
+                {debt <= 0 && totalAmount > 0 && <> | <strong style={{ color: "var(--accent-green)" }}>To'liq to'langan ✓</strong></>}
+              </div>
+            )}
+
+            <div className="grid-2">
+              <div className="form-group">
+                <label>To'langan summa</label>
+                <NumericInput value={paidAmount} onChange={(val) => setPaidAmount(val)} placeholder="0" />
+                {paidAmount && <div style={{ fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.25rem" }}>{fmtAmount(parseFloat(paidAmount))}</div>}
+              </div>
+              <div className="form-group"><label>Izoh</label><input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ixtiyoriy" /></div>
+            </div>
+
+            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+              <button className="btn btn-secondary btn-sm" onClick={onClose}>Bekor</button>
+              <button className="btn btn-primary btn-sm" onClick={submit} disabled={saving}>
+                {saving ? "Saqlanmoqda..." : "✏️ Saqlash"}
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>

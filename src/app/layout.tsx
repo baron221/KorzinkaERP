@@ -8,7 +8,12 @@ import { ToastProvider } from "@/components/ToastContext";
 export const metadata: Metadata = {
   title: "CRM — Korzinka Ishlab Chiqarish",
   description: "Korzinka ishlab chiqarish sexi uchun ERP/CRM boshqaruv tizimi",
-  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
