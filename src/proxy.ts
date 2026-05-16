@@ -5,8 +5,9 @@ import { decrypt } from "@/lib/auth";
 // These paths do not require authentication
 const publicPaths = ["/login", "/api/auth/login", "/_next", "/favicon.ico", "/images"];
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  console.log(`[Proxy] Request to: ${path}`);
 
   // Check if current path is public
   const isPublicPath = publicPaths.some(p => path.startsWith(p));
