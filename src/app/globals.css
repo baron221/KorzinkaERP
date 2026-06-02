@@ -36,8 +36,8 @@
   --accent-yellow: #fbbf24;
   --accent-orange: #fb923c;
   --accent-cyan: #22d3ee;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
+  --text-primary: #ffffff;
+  --text-secondary: #cbd5e1;
   --border: #272a40;
   --shadow: 0 1px 4px rgba(0,0,0,0.5);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.5);
@@ -439,14 +439,14 @@ tbody tr:hover { background: linear-gradient(90deg, #f8faff, #f5f7fe); }
 /* ============================================================
    DARK THEME OVERRIDES
    ============================================================ */
-[data-theme="dark"] .input { background: #252840; border-color: var(--border); color: #f1f5f9; }
+[data-theme="dark"] .input { background: #252840; border-color: var(--border); color: #ffffff; }
 [data-theme="dark"] .input:focus { background: var(--bg-card); border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,0.15); }
 [data-theme="dark"] select.input option { background: #1c1f31; }
 [data-theme="dark"] .table-wrapper { background: var(--bg-card); border-color: var(--border); }
 [data-theme="dark"] thead tr { background: linear-gradient(90deg, #1e2235, #1c1f31); }
 [data-theme="dark"] td { border-top-color: var(--border); }
 [data-theme="dark"] tbody tr:hover { background: #23263a; }
-[data-theme="dark"] .btn-secondary { background: #23263a; border-color: var(--border); color: #f1f5f9; }
+[data-theme="dark"] .btn-secondary { background: #23263a; border-color: var(--border); color: #ffffff; }
 [data-theme="dark"] .btn-secondary:hover { background: #2d3049; }
 [data-theme="dark"] .btn-danger { background: rgba(220,38,38,0.1); border-color: rgba(248,113,113,0.3); }
 [data-theme="dark"] .alert-warning { background: rgba(217,119,6,0.12); border-color: rgba(217,119,6,0.3); color: #fbbf24; }
