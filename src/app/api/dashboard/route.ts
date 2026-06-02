@@ -34,11 +34,16 @@ export async function GET(req: NextRequest) {
       by: ["size"],
       _sum: { count: true },
     });
+    const returnedItems = await prisma.customerReturnItem.groupBy({
+      by: ["size"],
+      _sum: { count: true },
+    });
 
     const getStock = (size: number) => {
       const p = producedItems.find(i => i.size === size)?._sum.count ?? 0;
       const s = soldItems.find(i => i.size === size)?._sum.count ?? 0;
-      return p - s;
+      const r = returnedItems.find(i => i.size === size)?._sum.count ?? 0;
+      return p - s + r;
     };
 
     const dynamicStock = {
@@ -66,6 +71,10 @@ export async function GET(req: NextRequest) {
     const filteredSaleAgg = await prisma.sale.aggregate({
       where: dateFilter,
       _sum: { totalAmount: true, paidAmount: true },
+    });
+    const filteredReturnAgg = await prisma.customerReturn.aggregate({
+      where: dateFilter,
+      _sum: { totalAmount: true },
     });
     const allDebtAgg = await prisma.sale.aggregate({
       _sum: { debtAmount: true },
@@ -117,10 +126,17 @@ export async function GET(req: NextRequest) {
       where: Object.keys(dateFilter).length > 0 ? { sale: dateFilter } : undefined,
       _sum: { count: true },
     });
+    const returnedAgg = await prisma.customerReturnItem.groupBy({
+      by: ["size"],
+      where: Object.keys(dateFilter).length > 0 ? { return: dateFilter } : undefined,
+      _sum: { count: true },
+    });
 
     let totalCOGS = 0;
     soldAgg.forEach((s) => {
-      const count = s._sum.count || 0;
+      const soldCount = s._sum.count || 0;
+      const retCount = returnedAgg.find(r => r.size === s.size)?._sum.count || 0;
+      const count = soldCount - retCount;
       const weightGram =
         sizeWeights[s.size] || (s.size === 16 ? 290 : s.size === 14 ? 200 : 150);
       const costRaw = (weightGram / 1000) * avgRawPrice;
@@ -139,12 +155,13 @@ export async function GET(req: NextRequest) {
       _sum: { amount: true }
     });
 
-    const totalRevAmount = filteredSaleAgg._sum.totalAmount ?? 0;
+    const totalRevAmount = (filteredSaleAgg._sum.totalAmount ?? 0) - (filteredReturnAgg._sum.totalAmount ?? 0);
 
     const customers = await prisma.customer.findMany({
       include: {
         sales: { select: { totalAmount: true } },
         customerPayments: { select: { amount: true } },
+        returns: { select: { totalAmount: true } },
       }
     });
 
@@ -156,7 +173,8 @@ export async function GET(req: NextRequest) {
     customers.forEach(c => {
       const totalBuy = c.sales.reduce((sum, s) => sum + s.totalAmount, 0);
       const totalPaid = c.customerPayments.reduce((sum, p) => sum + p.amount, 0);
-      const balance = totalBuy - totalPaid;
+      const totalRet = c.returns.reduce((sum, r) => sum + r.totalAmount, 0);
+      const balance = totalBuy - totalPaid - totalRet;
       if (balance > 0) {
         totalCustomerDebt += balance;
         customersWithDebt++;
@@ -168,16 +186,23 @@ export async function GET(req: NextRequest) {
 
     // Restore Profit calculation
     const allTimeSaleAgg = await prisma.sale.aggregate({ _sum: { totalAmount: true } });
-    const allTimeRev = allTimeSaleAgg._sum.totalAmount ?? 0;
+    const allTimeReturnAgg = await prisma.customerReturn.aggregate({ _sum: { totalAmount: true } });
+    const allTimeRev = (allTimeSaleAgg._sum.totalAmount ?? 0) - (allTimeReturnAgg._sum.totalAmount ?? 0);
+    
     const allTimeExpAgg = await prisma.expense.aggregate({ _sum: { amount: true } });
     const allTimeExp = allTimeExpAgg._sum.amount ?? 0;
+    
     const allTimeSoldAgg = await prisma.saleItem.groupBy({ by: ["size"], _sum: { count: true } });
+    const allTimeReturnedAgg = await prisma.customerReturnItem.groupBy({ by: ["size"], _sum: { count: true } });
+    
     let allTimeCOGS = 0;
     allTimeSoldAgg.forEach((s) => {
       const count = s._sum.count || 0;
+      const retCount = allTimeReturnedAgg.find(r => r.size === s.size)?._sum.count || 0;
+      const netCount = count - retCount;
       const weightGram = sizeWeights[s.size] || (s.size === 16 ? 290 : s.size === 14 ? 200 : 150);
       const costRaw = (weightGram / 1000) * avgRawPrice;
-      allTimeCOGS += count * costRaw;
+      allTimeCOGS += netCount * costRaw;
     });
     const totalNetProfit = allTimeRev - allTimeCOGS - allTimeExp;
     const netProfit = totalRevAmount - totalCOGS - totalExpAmount;
