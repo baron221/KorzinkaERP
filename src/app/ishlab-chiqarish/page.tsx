@@ -131,10 +131,10 @@ export default function IslabChiqarishPage() {
               const isOpen = expandedBatchId === size;
               const c = sc[size];
               return (
-                <div key={size} style={{ background: "white", border: `1.5px solid ${isOpen ? c.color : c.border}`, borderRadius: "16px", overflow: "hidden", boxShadow: isOpen ? `0 4px 16px ${c.bg}` : "0 1px 4px rgba(0,0,0,0.04)", transition: "all 0.2s ease" }}>
+                <div key={size} style={{ background: "var(--bg-card)", border: `1.5px solid ${isOpen ? c.color : c.border}`, borderRadius: "16px", overflow: "hidden", boxShadow: isOpen ? `0 4px 16px ${c.bg}` : "0 1px 4px rgba(0,0,0,0.04)", transition: "all 0.2s ease" }}>
                   <div
                     onClick={() => setExpandedBatchId(isOpen ? null : size)}
-                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.1rem 1.5rem", cursor: "pointer", background: isOpen ? c.light : "white", transition: "background 0.2s ease" }}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.1rem 1.5rem", cursor: "pointer", background: isOpen ? "var(--bg-hover)" : "var(--bg-card)", transition: "background 0.2s ease" }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                       <div style={{ width: 44, height: 44, borderRadius: 12, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -155,12 +155,12 @@ export default function IslabChiqarishPage() {
                     </div>
                   </div>
                   {isOpen && (
-                    <div style={{ borderTop: `1px solid ${c.border}`, background: c.light }}>
+                    <div style={{ borderTop: `1px solid ${c.border}`, background: "var(--bg-secondary)" }}>
                       <div style={{ padding: "1rem 1.5rem" }}>
                         <div style={{ fontSize: "0.72rem", fontWeight: 700, color: c.color, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
                           Razmer {size} — Barcha partiyalar tarixi
                         </div>
-                        <div className="table-wrapper" style={{ background: "white", borderRadius: "12px", overflow: "hidden", border: `1px solid ${c.border}`, marginBottom: 0 }}>
+                        <div className="table-wrapper" style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden", border: `1px solid ${c.border}`, marginBottom: 0 }}>
                           <table style={{ marginBottom: 0 }}>
                             <thead>
                               <tr>

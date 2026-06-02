@@ -242,7 +242,7 @@ export default function DashboardPage() {
             overflow: "hidden", 
             cursor: "pointer", 
             padding: "2rem",
-            background: "white",
+            background: "var(--bg-card)",
             border: "1px solid var(--border)",
             boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.05)",
             transition: "all 0.3s ease",
@@ -280,7 +280,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div style={{ fontSize: "0.85rem", background: "#f8fafc", padding: "1rem", borderRadius: "12px", border: "1px solid #f1f5f9", lineHeight: 1.6, color: "var(--text-secondary)" }}>
+          <div style={{ fontSize: "0.85rem", background: "var(--bg-secondary)", padding: "1rem", borderRadius: "12px", border: "1px solid var(--border)", lineHeight: 1.6, color: "var(--text-secondary)" }}>
             <div style={{ fontWeight: 600, marginBottom: "0.4rem", color: "var(--text-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>Bugungi Hisobot Tafsilotlari</div>
             {netProfitCard.sub}
           </div>
