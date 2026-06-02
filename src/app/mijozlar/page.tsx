@@ -17,6 +17,7 @@ interface Customer {
   address: string | null;
   sales: Array<{ date: string; totalAmount: number; paidAmount: number; debtAmount: number; notes?: string | null; items?: Array<{ size: number; count: number }> }>;
   customerPayments?: Array<{ amount: number }>;
+  returns?: Array<{ id: number; date: string; totalAmount: number; notes?: string | null; createdAt?: string; items?: Array<{ size: number; count: number; unitPrice: number; subtotal: number }> }>;
 }
 interface Stock {
   size12Count: number;
@@ -38,6 +39,7 @@ export default function MijozlarPage() {
   const [loading, setLoading] = useState(true);
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [selectedReturnCustomerId, setSelectedReturnCustomerId] = useState<number | null>(null);
 
   const loadAll = useCallback(async () => {
     const [c, dash] = await Promise.all([
@@ -104,7 +106,7 @@ export default function MijozlarPage() {
       {loading ? (
         <div style={{ color: "var(--text-secondary)", textAlign: "center", padding: "2rem" }}>Yuklanmoqda...</div>
       ) : tab === "list" ? (
-        <CustomerList customers={filtered} search={search} setSearch={setSearch} onDelete={handleDelete} onSelectCustomer={setSelectedCustomerId} />
+        <CustomerList customers={filtered} search={search} setSearch={setSearch} onDelete={handleDelete} onSelectCustomer={setSelectedCustomerId} onSelectReturn={setSelectedReturnCustomerId} />
       ) : tab === "sell" ? (
         <SalesList onDelete={handleDelete} />
       ) : (
@@ -123,6 +125,13 @@ export default function MijozlarPage() {
       {selectedCustomerId && (
         <CustomerDetailsModal customerId={selectedCustomerId} onClose={() => setSelectedCustomerId(null)} />
       )}
+      {selectedReturnCustomerId && (
+        <AddReturnModal 
+          customer={customers.find(c => c.id === selectedReturnCustomerId)!} 
+          onClose={() => setSelectedReturnCustomerId(null)} 
+          onSuccess={() => { setSelectedReturnCustomerId(null); loadAll(); }} 
+        />
+      )}
 
       {/* Mobile FAB */}
       <MobileFab
@@ -137,7 +146,7 @@ export default function MijozlarPage() {
   );
 }
 
-function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer }: { customers: Customer[]; search: string; setSearch: (s: string) => void; onDelete: (type: string, id: number) => void; onSelectCustomer: (id: number) => void }) {
+function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer, onSelectReturn }: { customers: Customer[]; search: string; setSearch: (s: string) => void; onDelete: (type: string, id: number) => void; onSelectCustomer: (id: number) => void; onSelectReturn: (id: number) => void }) {
   const [expanded, setExpanded] = useState<number | null>(null);
 
   return (
@@ -216,6 +225,13 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                         style={{ padding: "0.4rem 0.7rem", fontSize: "0.75rem" }}
                       >
                         Tarix
+                      </button>
+                      <button 
+                        className="btn btn-secondary btn-sm" 
+                        onClick={(e) => { e.stopPropagation(); onSelectReturn(c.id); }}
+                        style={{ padding: "0.4rem 0.7rem", fontSize: "0.75rem", color: "var(--accent-orange)" }}
+                      >
+                        Vozvrat
                       </button>
                       <button 
                         className="btn btn-sm" 
@@ -678,6 +694,17 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
         notes: p.notes || "💸 Qarz to'lovi / Avans olindi",
       });
     });
+    data.returns?.forEach((r: any) => {
+      history.push({
+        type: "return",
+        id: `r-${r.id}`,
+        date: r.date,
+        createdAt: r.createdAt,
+        amount: r.totalAmount,
+        items: r.items,
+        notes: r.notes ? `↩️ Vozvrat — ${r.notes}` : `↩️ Vozvrat (Mahsulot qaytarildi)`,
+      });
+    });
 
     // Sort chronologically: Business date first, then use createdAt for precise timing
     history.sort((a, b) => {
@@ -741,7 +768,7 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
                       <tr key={h.id}>
                         <td>{formatDateTime(h.date, h.createdAt)}</td>
                         <td>
-                          <div style={{ color: h.type === "payment" ? "var(--accent-green)" : "inherit", marginBottom: h.items ? "0.25rem" : "0" }}>
+                          <div style={{ color: h.type === "payment" ? "var(--accent-green)" : (h.type === "return" ? "var(--accent-red)" : "inherit"), marginBottom: h.items ? "0.25rem" : "0" }}>
                             {h.notes}
                           </div>
                           {h.items && (
@@ -759,8 +786,8 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
                         <td style={{ textAlign: "right", fontWeight: h.type === "sale" ? 600 : 400 }}>
                           {h.type === "sale" ? fmtAmount(h.amount) : "—"}
                         </td>
-                        <td style={{ textAlign: "right", fontWeight: h.type === "payment" ? 600 : 400, color: h.type === "payment" ? "var(--accent-green)" : "inherit" }}>
-                          {h.type === "payment" ? `+ ${fmtAmount(h.amount)}` : "—"}
+                        <td style={{ textAlign: "right", fontWeight: (h.type === "payment" || h.type === "return") ? 600 : 400, color: h.type === "payment" ? "var(--accent-green)" : (h.type === "return" ? "var(--accent-red)" : "inherit") }}>
+                          {h.type === "payment" ? `+ ${fmtAmount(h.amount)}` : (h.type === "return" ? `- ${fmtAmount(h.amount)}` : "—")}
                         </td>
                         <td style={{ textAlign: "right", borderLeft: "1px solid var(--border)", fontWeight: 700 }}>
                           {runningBalance > 0 ? (
@@ -952,6 +979,111 @@ function EditSaleModal({ saleId, onClose, onSuccess }: {
             </div>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+function AddReturnModal({ customer, onClose, onSuccess }: { customer: Customer; onClose: () => void; onSuccess: () => void }) {
+  const [items, setItems] = useState([{ size: 12, count: 0, unitPrice: 0 }]);
+  const [notes, setNotes] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [saving, setSaving] = useState(false);
+
+  const totalAmount = items.reduce((s, i) => s + (i.count || 0) * (i.unitPrice || 0), 0);
+
+  const addItem = () => setItems([...items, { size: 12, count: 0, unitPrice: 0 }]);
+  const removeItem = (index: number) => {
+    const newItems = [...items];
+    newItems.splice(index, 1);
+    setItems(newItems);
+  };
+  const updateItem = (index: number, field: string, val: any) => {
+    const newItems = [...items];
+    (newItems[index] as any)[field] = field === "size" ? parseInt(val) : parseFloat(val) || 0;
+    setItems(newItems);
+  };
+
+  const submit = async () => {
+    const validItems = items.filter(i => i.count > 0 && i.unitPrice > 0);
+    if (validItems.length === 0) return alert("Kamida bitta to'g'ri mahsulot kiritilishi shart (soni va narxi > 0).");
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/returns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: customer.id,
+          date,
+          notes,
+          items: validItems
+        }),
+      });
+      if (res.ok) onSuccess();
+      else {
+        const d = await res.json();
+        alert(d.error || "Xatolik yuz berdi");
+      }
+    } catch (e) {
+      alert("Xatolik");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-title">
+          <span>↩️ Vozvrat (Mahsulot Qaytarish) — {customer.name}</span>
+          <button className="btn btn-secondary btn-sm" onClick={onClose}><X size={14} /></button>
+        </div>
+
+        <div className="grid-1" style={{ marginBottom: "1rem" }}>
+          <div className="form-group">
+            <label>Sana</label>
+            <input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="form-group" style={{ marginBottom: "1rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+            <label style={{ margin: 0 }}>Qaytarilgan mahsulotlar</label>
+            <button className="btn btn-secondary btn-sm" onClick={addItem} style={{ padding: "0.2rem 0.5rem" }}><Plus size={14} /> Qo'shish</button>
+          </div>
+          {items.map((item, i) => (
+            <div key={i} style={{ display: "grid", gridTemplateColumns: "120px 1fr 1fr auto", gap: "0.5rem", marginBottom: "0.5rem", alignItems: "center" }}>
+              <select className="input" value={item.size} onChange={(e) => updateItem(i, "size", e.target.value)}>
+                <option value={12}>Razmer 12</option>
+                <option value={14}>Razmer 14</option>
+                <option value={16}>Razmer 16</option>
+              </select>
+              <div><NumericInput value={item.count || ""} onChange={(val) => updateItem(i, "count", val)} allowDecimals={false} placeholder="Soni" /></div>
+              <div>
+                <NumericInput value={item.unitPrice || ""} onChange={(val) => updateItem(i, "unitPrice", val)} placeholder="Narxi" />
+              </div>
+              <button className="btn btn-danger btn-sm" onClick={() => removeItem(i)} style={{ padding: "0.35rem" }}><X size={12} /></button>
+            </div>
+          ))}
+        </div>
+
+        {totalAmount > 0 && (
+          <div className="alert" style={{ marginBottom: "1rem", background: "var(--accent-orange-light)", color: "var(--accent-orange)", border: "1px solid var(--accent-orange)" }}>
+            Jami vozvrat summasi: <strong>{fmtAmount(totalAmount)}</strong>
+            <br />
+            <span style={{ fontSize: "0.85rem", opacity: 0.8 }}>(Bu summa mijozning qarzidan ayirib tashlanadi)</span>
+          </div>
+        )}
+
+        <div className="form-group"><label>Izoh</label><input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ixtiyoriy" /></div>
+
+        <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginTop: "1rem" }}>
+          <button className="btn btn-secondary btn-sm" onClick={onClose}>Bekor</button>
+          <button className="btn btn-sm" onClick={submit} disabled={saving} style={{ background: "var(--accent-orange)", color: "white" }}>
+            {saving ? "Saqlanmoqda..." : "↩️ Vozvratni Saqlash"}
+          </button>
+        </div>
       </div>
     </div>
   );

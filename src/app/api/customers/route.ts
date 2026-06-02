@@ -10,6 +10,10 @@ export async function GET() {
           include: { items: true },
         },
         customerPayments: true,
+        returns: {
+          orderBy: { date: "desc" },
+          include: { items: true },
+        },
       },
       orderBy: { createdAt: "desc" },
     });

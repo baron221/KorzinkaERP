@@ -95,6 +95,7 @@ model Customer {
 
   sales            Sale[]
   customerPayments CustomerPayment[]
+  returns          CustomerReturn[]
 }
 
 model Sale {
@@ -135,6 +136,30 @@ model CustomerPayment {
 
   customer Customer @relation(fields: [customerId], references: [id])
   sale     Sale?    @relation(fields: [saleId], references: [id])
+}
+
+model CustomerReturn {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  date        DateTime @default(now())
+  totalAmount Float    // how much debt is reduced
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer Customer             @relation(fields: [customerId], references: [id])
+  items    CustomerReturnItem[]
+}
+
+model CustomerReturnItem {
+  id        Int   @id @default(autoincrement())
+  returnId  Int
+  size      Int   // 12, 14, or 16
+  count     Int
+  unitPrice Float // price per basket at which it was returned
+  subtotal  Float // count * unitPrice
+
+  return CustomerReturn @relation(fields: [returnId], references: [id])
 }
 
 // ============================================================
