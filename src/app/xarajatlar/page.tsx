@@ -107,7 +107,7 @@ export default function XarajatlarPage() {
               <div 
                 key={cat}
                 style={{
-                  background: "white",
+                  background: "var(--bg-card)",
                   border: `1.5px solid ${borderCol}`,
                   borderRadius: "16px",
                   overflow: "hidden",
@@ -121,7 +121,7 @@ export default function XarajatlarPage() {
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     padding: "1.1rem 1.5rem", cursor: "pointer",
-                    background: isOpen ? bgLight : "white",
+                    background: isOpen ? bgLight : "var(--bg-card)",
                     transition: "background 0.2s ease"
                   }}
                 >
@@ -155,14 +155,14 @@ export default function XarajatlarPage() {
 
                 {/* Expanded Table area */}
                 {isOpen && (
-                  <div style={{ borderTop: `1px solid ${borderCol}`, background: "#fafafa" }}>
+                  <div style={{ borderTop: `1px solid ${borderCol}`, background: "var(--bg-secondary)" }}>
                     {catExpenses.length === 0 ? (
                       <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.85rem" }}>
                         Bu kategoriya bo'yicha xarajat topilmadi
                       </div>
                     ) : (
                       <div style={{ padding: "1rem 1.5rem" }}>
-                        <div className="table-wrapper" style={{ background: "white", borderRadius: "12px", overflow: "hidden", border: `1px solid ${borderCol}`, marginBottom: 0 }}>
+                        <div className="table-wrapper" style={{ background: "var(--bg-card)", borderRadius: "12px", overflow: "hidden", border: `1px solid ${borderCol}`, marginBottom: 0 }}>
                           <table style={{ marginBottom: 0 }}>
                             <thead>
                               <tr>
