@@ -56,7 +56,7 @@ function fmtDate(dateStr: string) {
   });
 }
 
-function SnapshotViewer({ snapshot, entity }: { snapshot: Record<string, any>; entity: string }) {
+function SnapshotViewer({ snapshot, entity, customersMap }: { snapshot: Record<string, any>; entity: string; customersMap?: Record<number, string> }) {
   const fmtNum = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
   const rows: { label: string; value: string }[] = [];
 
@@ -88,7 +88,10 @@ function SnapshotViewer({ snapshot, entity }: { snapshot: Record<string, any>; e
     if (snapshot.amount != null) rows.push({ label: "Summa", value: fmtNum(snapshot.amount) + " so'm" });
     if (snapshot.notes) rows.push({ label: "Izoh", value: snapshot.notes });
   } else if (entity === "CustomerReturn") {
-    if (snapshot.customerId != null) rows.push({ label: "Mijoz ID", value: String(snapshot.customerId) });
+    const customerName = snapshot.customerId && customersMap ? customersMap[snapshot.customerId] : null;
+    if (customerName) rows.push({ label: "Kimdan (Mijoz)", value: customerName });
+    else if (snapshot.customerId != null) rows.push({ label: "Mijoz ID", value: String(snapshot.customerId) });
+    
     if (snapshot.totalAmount != null) rows.push({ label: "Qaytarilgan summa", value: fmtNum(snapshot.totalAmount) + " so'm" });
     if (snapshot.notes) rows.push({ label: "Izoh", value: snapshot.notes });
     if (snapshot.items) {
@@ -118,14 +121,24 @@ function SnapshotViewer({ snapshot, entity }: { snapshot: Record<string, any>; e
 
 export default function TarixPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [customersMap, setCustomersMap] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [filter, setFilter] = useState("ALL");
 
   useEffect(() => {
-    fetch("/api/activity-log")
-      .then(r => r.json())
-      .then(d => { setLogs(Array.isArray(d) ? d : []); setLoading(false); });
+    Promise.all([
+      fetch("/api/activity-log").then(r => r.json()),
+      fetch("/api/customers").then(r => r.json())
+    ]).then(([logsData, customersData]) => {
+      setLogs(Array.isArray(logsData) ? logsData : []);
+      const cMap: Record<number, string> = {};
+      if (Array.isArray(customersData)) {
+        customersData.forEach((c: any) => cMap[c.id] = c.name);
+      }
+      setCustomersMap(cMap);
+      setLoading(false);
+    });
   }, []);
 
   const entityTypes = ["ALL", ...Array.from(new Set(logs.map(l => l.entity)))];
@@ -220,7 +233,7 @@ export default function TarixPage() {
                       <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
                         {log.action === "DELETE" ? "O'chirilgan paytdagi ma'lumotlar" : "Saqlangan ma'lumotlar"}
                       </div>
-                      <SnapshotViewer snapshot={log.snapshot} entity={log.entity} />
+                      <SnapshotViewer snapshot={log.snapshot} entity={log.entity} customersMap={customersMap} />
                     </div>
                   </div>
                 )}
