@@ -165,7 +165,8 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
           {customers.map((c) => {
             const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
             const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
-            const balance = totalBuy - totalPaid;
+            const totalRet = c.returns?.reduce((s, r) => s + r.totalAmount, 0) || 0;
+            const balance = totalBuy - totalPaid - totalRet;
 
             let r12 = 0, r14 = 0, r16 = 0;
             c.sales.forEach(sale => {
