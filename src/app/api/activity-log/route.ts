@@ -12,6 +12,7 @@ const entityLabels: Record<string, string> = {
   CustomerPayment: "Mijoz To'lovi",
   Customer: "Mijoz",
   Supplier: "Ta'minotchi",
+  CustomerReturn: "Mijoz Vozvrati",
 };
 
 export async function GET() {
