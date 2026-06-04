@@ -117,6 +117,39 @@ export async function DELETE(req: NextRequest) {
         await prisma.sale.delete({ where: { id } });
         break;
       }
+      case "customer-return": {
+        const ret = await prisma.customerReturn.findUnique({ where: { id }, include: { items: true } });
+        if (ret) {
+          await prisma.activityLog.create({
+            data: { action: "DELETE", entity: "CustomerReturn", entityId: id, snapshot: ret as object },
+          });
+
+          // Revert stock (returns ADDED to stock, so we must DECREMENT)
+          let dec12 = 0, dec14 = 0, dec16 = 0;
+          for (const item of ret.items) {
+            if (item.size === 12) dec12 += item.count;
+            if (item.size === 14) dec14 += item.count;
+            if (item.size === 16) dec16 += item.count;
+          }
+          if (dec12 > 0 || dec14 > 0 || dec16 > 0) {
+            const stock = await prisma.stockSnapshot.findFirst();
+            if (stock) {
+              await prisma.stockSnapshot.update({
+                where: { id: stock.id },
+                data: {
+                  size12Count: { decrement: dec12 },
+                  size14Count: { decrement: dec14 },
+                  size16Count: { decrement: dec16 },
+                },
+              });
+            }
+          }
+
+          await prisma.customerReturnItem.deleteMany({ where: { returnId: id } });
+          await prisma.customerReturn.delete({ where: { id } });
+        }
+        break;
+      }
       default:
         return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     }
