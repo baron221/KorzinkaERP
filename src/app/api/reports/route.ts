@@ -7,9 +7,27 @@ export async function GET() {
   const saleAgg = await prisma.sale.aggregate({
     _sum: { totalAmount: true, paidAmount: true, debtAmount: true },
   });
-  const totalRevenue = saleAgg._sum.totalAmount ?? 0;
+  const returnAgg = await prisma.customerReturn.aggregate({
+    _sum: { totalAmount: true },
+  });
+  const totalRevenue = (saleAgg._sum.totalAmount ?? 0) - (returnAgg._sum.totalAmount ?? 0);
   const totalCollected = saleAgg._sum.paidAmount ?? 0;
-  const totalCustomerDebt = saleAgg._sum.debtAmount ?? 0;
+
+  const customers = await prisma.customer.findMany({
+    include: {
+      sales: { select: { totalAmount: true } },
+      customerPayments: { select: { amount: true } },
+      returns: { select: { totalAmount: true } },
+    }
+  });
+  let totalCustomerDebt = 0;
+  customers.forEach(c => {
+    const totalBuy = c.sales.reduce((sum, s) => sum + s.totalAmount, 0);
+    const totalPaid = c.customerPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalRet = c.returns.reduce((sum, r) => sum + r.totalAmount, 0);
+    const balance = totalBuy - totalPaid - totalRet;
+    if (balance > 0) totalCustomerDebt += balance;
+  });
 
   // Total raw material cost
   const rawAgg = await prisma.rawMaterial.aggregate({
@@ -42,13 +60,17 @@ export async function GET() {
       where: { date: { gte: d, lt: nextD } },
       _sum: { totalAmount: true },
     });
+    const ret = await prisma.customerReturn.aggregate({
+      where: { date: { gte: d, lt: nextD } },
+      _sum: { totalAmount: true },
+    });
     const exp = await prisma.expense.aggregate({
       where: { date: { gte: d, lt: nextD } },
       _sum: { amount: true },
     });
     monthlyData.push({
       month: label,
-      revenue: rev._sum.totalAmount ?? 0,
+      revenue: (rev._sum.totalAmount ?? 0) - (ret._sum.totalAmount ?? 0),
       expenses: exp._sum.amount ?? 0,
     });
   }
@@ -85,14 +107,20 @@ export async function GET() {
     by: ["size"],
     _sum: { count: true },
   });
+  const returnedAgg = await prisma.customerReturnItem.groupBy({
+    by: ["size"],
+    _sum: { count: true },
+  });
 
   let totalCOGS = 0;
   soldAgg.forEach((s) => {
     const count = s._sum.count || 0;
+    const retCount = returnedAgg.find(r => r.size === s.size)?._sum.count || 0;
+    const netCount = count - retCount;
     const weightGram =
       sizeWeights[s.size] || (s.size === 16 ? 290 : s.size === 14 ? 200 : 150);
     const costRaw = (weightGram / 1000) * avgRawPrice;
-    totalCOGS += count * costRaw;
+    totalCOGS += netCount * costRaw;
   });
 
   // Net profit (Sof foyda)
