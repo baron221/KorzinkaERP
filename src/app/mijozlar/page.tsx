@@ -695,6 +695,10 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
       });
     });
     data.returns?.forEach((r: any) => {
+      const totalCount = r.items ? r.items.reduce((s: number, i: any) => s + i.count, 0) : 0;
+      let defaultNote = `↩️ Vozvrat: ${totalCount} ta mahsulot qaytdi (Qarzdan ${new Intl.NumberFormat('uz-UZ').format(r.totalAmount)} so'm ayirildi)`;
+      if (r.notes) defaultNote += ` — ${r.notes}`;
+      
       history.push({
         type: "return",
         id: `r-${r.id}`,
@@ -702,7 +706,7 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
         createdAt: r.createdAt,
         amount: r.totalAmount,
         items: r.items,
-        notes: r.notes ? `↩️ Vozvrat — ${r.notes}` : `↩️ Vozvrat (Mahsulot qaytarildi)`,
+        notes: defaultNote,
       });
     });
 
