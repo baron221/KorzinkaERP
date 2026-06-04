@@ -675,6 +675,19 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
     });
   }, [customerId]);
 
+  const handleDeleteReturn = async (id: number) => {
+    if (!confirm("Haqiqatan ham bu vozvratni o'chirmoqchimisiz?")) return;
+    const res = await fetch(`/api/delete?type=customer-return&id=${id}`, { method: "DELETE" });
+    if (res.ok) {
+      // refetch
+      const d = await fetch(`/api/customers/${customerId}`).then(r => r.json());
+      setData(d);
+    } else {
+      const err = await res.json();
+      alert(err.error || "O'chirishda xatolik yuz berdi");
+    }
+  };
+
   let history: any[] = [];
   if (data) {
     data.sales?.forEach((s: any) => {
@@ -801,13 +814,25 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
                           {h.type === "payment" ? `+ ${fmtAmount(h.amount)}` : (h.type === "return" ? `- ${fmtAmount(h.amount)}` : "—")}
                         </td>
                         <td style={{ textAlign: "right", borderLeft: "1px solid var(--border)", fontWeight: 700 }}>
-                          {runningBalance > 0 ? (
-                            <span className="badge badge-red">Qarz: {fmtAmount(runningBalance)}</span>
-                          ) : runningBalance < 0 ? (
-                            <span className="badge badge-green">Avans (Sizda): {fmtAmount(Math.abs(runningBalance))}</span>
-                          ) : (
-                            <span className="badge" style={{ background: "var(--bg-secondary)" }}>Nol (0)</span>
-                          )}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.5rem" }}>
+                            {runningBalance > 0 ? (
+                              <span className="badge badge-red">Qarz: {fmtAmount(runningBalance)}</span>
+                            ) : runningBalance < 0 ? (
+                              <span className="badge badge-green">Avans: {fmtAmount(Math.abs(runningBalance))}</span>
+                            ) : (
+                              <span className="badge" style={{ background: "var(--bg-secondary)" }}>Nol (0)</span>
+                            )}
+                            
+                            {h.type === "return" && (
+                              <button 
+                                onClick={() => handleDeleteReturn(parseInt(h.id.replace('r-', '')))}
+                                style={{ background: "transparent", border: "none", color: "var(--accent-red)", cursor: "pointer", padding: "0.2rem" }}
+                                title="Vozvratni o'chirish"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
