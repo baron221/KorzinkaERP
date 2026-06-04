@@ -22,6 +22,7 @@ const entityIcons: Record<string, any> = {
   CustomerPayment: CreditCard,
   Customer: User,
   Supplier: Truck,
+  CustomerReturn: ShoppingCart,
 };
 
 const entityColors: Record<string, string> = {
@@ -33,6 +34,7 @@ const entityColors: Record<string, string> = {
   CustomerPayment: "#0891b2",
   Customer: "#0284c7",
   Supplier: "#16a34a",
+  CustomerReturn: "#ea580c",
 };
 
 const entityBg: Record<string, string> = {
@@ -44,6 +46,7 @@ const entityBg: Record<string, string> = {
   CustomerPayment: "#e0f2fe",
   Customer: "#e0f2fe",
   Supplier: "#dcfce7",
+  CustomerReturn: "#ffedd5",
 };
 
 function fmtDate(dateStr: string) {
@@ -84,6 +87,15 @@ function SnapshotViewer({ snapshot, entity }: { snapshot: Record<string, any>; e
   } else if (entity === "SupplierPayment") {
     if (snapshot.amount != null) rows.push({ label: "Summa", value: fmtNum(snapshot.amount) + " so'm" });
     if (snapshot.notes) rows.push({ label: "Izoh", value: snapshot.notes });
+  } else if (entity === "CustomerReturn") {
+    if (snapshot.customerId != null) rows.push({ label: "Mijoz ID", value: String(snapshot.customerId) });
+    if (snapshot.totalAmount != null) rows.push({ label: "Qaytarilgan summa", value: fmtNum(snapshot.totalAmount) + " so'm" });
+    if (snapshot.notes) rows.push({ label: "Izoh", value: snapshot.notes });
+    if (snapshot.items) {
+      snapshot.items.forEach((item: any) => {
+        rows.push({ label: `Razmer ${item.size}`, value: `${item.count} ta / ${fmtNum(item.unitPrice)} so'm` });
+      });
+    }
   } else {
     Object.entries(snapshot).forEach(([k, v]) => {
       if (typeof v !== "object" && v != null) rows.push({ label: k, value: String(v) });
@@ -121,6 +133,7 @@ export default function TarixPage() {
     ALL: "Barchasi", Sale: "Savdo", Expense: "Xarajat", RawMaterial: "Seryo",
     Production: "Ishlab Chiqarish", SupplierPayment: "Ta'minotchi To'lovi",
     CustomerPayment: "Mijoz To'lovi", Customer: "Mijoz", Supplier: "Ta'minotchi",
+    CustomerReturn: "Vozvrat",
   };
   const filtered = filter === "ALL" ? logs : logs.filter(l => l.entity === filter);
 
@@ -135,7 +148,7 @@ export default function TarixPage() {
         <div style={{ position: "relative", zIndex: 1 }}>
           <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.4rem" }}>📋 Audit Tizimi</div>
           <div style={{ fontSize: "1.6rem", fontWeight: 900 }}>Amallar Tarixi</div>
-          <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)", marginTop: "0.4rem" }}>O'chirilgan va yaratilgan barcha yozuvlarning to'liq tarixi</div>
+          <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)", marginTop: "0.4rem" }}>Barcha o'chirilgan va yaratilgan ma'lumotlarning to'liq tarixi</div>
         </div>
       </div>
 
@@ -205,7 +218,7 @@ export default function TarixPage() {
                   <div style={{ padding: "0 1.25rem 1.25rem", borderTop: `1px solid ${color}20` }}>
                     <div style={{ paddingTop: "1rem" }}>
                       <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
-                        O'chirilgan paytdagi ma'lumotlar
+                        {log.action === "DELETE" ? "O'chirilgan paytdagi ma'lumotlar" : "Saqlangan ma'lumotlar"}
                       </div>
                       <SnapshotViewer snapshot={log.snapshot} entity={log.entity} />
                     </div>
