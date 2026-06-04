@@ -248,6 +248,12 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                         <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>To'lovlar</div>
                         <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--accent-green)" }}>{fmtAmount(totalPaid)}</div>
                       </div>
+                      {totalRet > 0 && (
+                        <div className="card" style={{ padding: "0.75rem", background: "var(--bg-primary)" }}>
+                          <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Qaytarilgan (Vozvrat)</div>
+                          <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--accent-orange)" }}>{fmtAmount(totalRet)}</div>
+                        </div>
+                      )}
                       {(r12 > 0 || r14 > 0 || r16 > 0) && (
                         <div className="card" style={{ padding: "0.75rem", background: "var(--bg-primary)" }}>
                           <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Savatlar soni</div>
