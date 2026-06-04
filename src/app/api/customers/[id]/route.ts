@@ -15,6 +15,7 @@ export async function GET(
         include: { items: true, payments: true },
       },
       customerPayments: { orderBy: { date: "desc" } },
+      returns: { orderBy: { date: "desc" }, include: { items: true } },
     },
   });
   if (!customer) return NextResponse.json({ error: "Topilmadi" }, { status: 404 });
