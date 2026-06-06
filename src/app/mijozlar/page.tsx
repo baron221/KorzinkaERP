@@ -266,12 +266,30 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                         </div>
                       )}
                       {(r12 > 0 || r14 > 0 || r16 > 0) && (
-                        <div className="card" style={{ padding: "0.75rem", background: "var(--bg-primary)" }}>
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Savatlar soni</div>
-                          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
-                            {r12 > 0 && <span className="badge badge-blue">R12: {r12}</span>}
-                            {r14 > 0 && <span className="badge badge-blue">R14: {r14}</span>}
-                            {r16 > 0 && <span className="badge badge-blue">R16: {r16}</span>}
+                        <div className="card" style={{ padding: "0.75rem 1rem", background: "var(--bg-primary)", gridColumn: "1 / -1" }}>
+                          <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.6rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>🧺 Savatlar soni (Netto)</div>
+                          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+                            {r12 > 0 && (
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "rgba(99,102,241,0.1)", borderRadius: "10px", padding: "0.5rem 1rem", border: "1px solid rgba(99,102,241,0.25)" }}>
+                                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#6366f1" }}>R12</span>
+                                <span style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>{r12.toLocaleString()}</span>
+                                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>ta</span>
+                              </div>
+                            )}
+                            {r14 > 0 && (
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "rgba(16,185,129,0.1)", borderRadius: "10px", padding: "0.5rem 1rem", border: "1px solid rgba(16,185,129,0.25)" }}>
+                                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#10b981" }}>R14</span>
+                                <span style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>{r14.toLocaleString()}</span>
+                                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>ta</span>
+                              </div>
+                            )}
+                            {r16 > 0 && (
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "rgba(245,158,11,0.1)", borderRadius: "10px", padding: "0.5rem 1rem", border: "1px solid rgba(245,158,11,0.25)" }}>
+                                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#f59e0b" }}>R16</span>
+                                <span style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>{r16.toLocaleString()}</span>
+                                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>ta</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
