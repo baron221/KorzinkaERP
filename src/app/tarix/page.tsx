@@ -119,6 +119,62 @@ function SnapshotViewer({ snapshot, entity, customersMap }: { snapshot: Record<s
   );
 }
 
+function getLogSummary(log: LogEntry, customersMap: Record<number, string>) {
+  const s = log.snapshot || {};
+  const fmtNum = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+
+  switch (log.entity) {
+    case "Sale": {
+      const custName = s.customer?.name || "";
+      const itemsStr = s.items?.map((it: any) => `R${it.size}×${it.count}`).join(", ") || "";
+      const amtStr = s.totalAmount != null ? fmtNum(s.totalAmount) + " so'm" : "";
+      return [custName, itemsStr, amtStr].filter(Boolean).join(" | ");
+    }
+    case "CustomerReturn": {
+      const custName = s.customerId && customersMap ? customersMap[s.customerId] : (s.customer?.name || "");
+      const itemsStr = s.items?.map((it: any) => `R${it.size}×${it.count}`).join(", ") || "";
+      const amtStr = s.totalAmount != null ? fmtNum(s.totalAmount) + " so'm" : "";
+      return `Vozvrat: ${[custName, itemsStr, amtStr].filter(Boolean).join(" | ")}`;
+    }
+    case "Production": {
+      const raw = s.rawUsedKg != null ? `${s.rawUsedKg} kg seryo` : "";
+      const baskets = s.totalBaskets != null ? `${s.totalBaskets} ta korzinka` : "";
+      const itemsStr = s.items?.map((it: any) => `R${it.size}×${it.count}`).join(", ") || "";
+      return [raw, baskets, itemsStr].filter(Boolean).join(" | ");
+    }
+    case "Expense": {
+      const cats: Record<string, string> = { ELECTRICITY: "Elektr", WAGES: "Ish haqi", FOOD: "Ovqat", MISC: "Boshqa" };
+      const cat = cats[s.category] || s.category || "";
+      const amt = s.amount != null ? fmtNum(s.amount) + " so'm" : "";
+      return [cat, amt, s.notes].filter(Boolean).join(" | ");
+    }
+    case "CustomerPayment": {
+      const custName = s.customerId && customersMap ? customersMap[s.customerId] : (s.customer?.name || "");
+      const amt = s.amount != null ? fmtNum(s.amount) + " so'm" : "";
+      return [custName, amt, s.notes].filter(Boolean).join(" | ");
+    }
+    case "SupplierPayment": {
+      const suppName = s.supplier?.name || "";
+      const amt = s.amount != null ? fmtNum(s.amount) + " so'm" : "";
+      return [suppName, amt, s.notes].filter(Boolean).join(" | ");
+    }
+    case "RawMaterial": {
+      const suppName = s.supplier?.name || "";
+      const weight = s.weightKg != null ? `${s.weightKg} kg` : "";
+      const amt = s.totalAmount != null ? fmtNum(s.totalAmount) + " so'm" : "";
+      return [suppName, weight, amt].filter(Boolean).join(" | ");
+    }
+    case "Customer": {
+      return s.name || "";
+    }
+    case "Supplier": {
+      return s.name || "";
+    }
+    default:
+      return "";
+  }
+}
+
 export default function TarixPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [customersMap, setCustomersMap] = useState<Record<number, string>>({});
@@ -221,7 +277,17 @@ export default function TarixPage() {
                       }}>{log.actionLabel}</span>
                       <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>#{log.entityId}</span>
                     </div>
-                    <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: "0.2rem" }}>{fmtDate(log.createdAt)}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>{fmtDate(log.createdAt)}</span>
+                      {getLogSummary(log, customersMap) && (
+                        <>
+                          <span style={{ fontSize: "0.75rem", color: "var(--border)" }}>|</span>
+                          <span style={{ fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 600 }}>
+                            {getLogSummary(log, customersMap)}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div style={{ color: "var(--text-secondary)", flexShrink: 0 }}>
                     {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}

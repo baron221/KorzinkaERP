@@ -42,6 +42,15 @@ interface DashboardData {
     paidAmount: number;
     debtAmount: number;
     customer: { name: string };
+    items?: Array<{ size: number; count: number }>;
+  }>;
+  recentReturns: Array<{
+    id: number;
+    date: string;
+    totalAmount: number;
+    notes?: string | null;
+    customer: { name: string };
+    items?: Array<{ size: number; count: number }>;
   }>;
 }
 
@@ -366,6 +375,7 @@ export default function DashboardPage() {
               <thead>
                 <tr>
                   <th>Mijoz</th>
+                  <th>Mahsulotlar</th>
                   <th>Sana</th>
                   <th>Jami Summa</th>
                   <th>To'langan</th>
@@ -376,6 +386,13 @@ export default function DashboardPage() {
                 {data.recentSales.map((sale) => (
                   <tr key={sale.id}>
                     <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{sale.customer.name}</td>
+                    <td>
+                      {sale.items?.map((item, i) => (
+                        <span key={i} className="badge badge-blue" style={{ marginRight: "0.25rem" }}>
+                          R{item.size}×{item.count}
+                        </span>
+                      ))}
+                    </td>
                     <td className="text-muted" style={{ whiteSpace: "nowrap" }}>
                       {new Date(sale.date).toLocaleDateString("uz-UZ")}
                     </td>
@@ -395,6 +412,59 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Recent Returns */}
+      {data.recentReturns && data.recentReturns.length > 0 && (
+        <div className="card" style={{ marginBottom: "1.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#ffedd5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ShoppingCart size={15} color="#ea580c" />
+              </div>
+              <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>So'nggi Vozvratlar (Qaytarilganlar)</span>
+            </div>
+            <Link href="/mijozlar" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.25rem", textDecoration: "none" }}>
+              Ko'rish <ArrowUpRight size={12} />
+            </Link>
+          </div>
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mijoz</th>
+                  <th>Mahsulotlar</th>
+                  <th>Sana</th>
+                  <th>Qaytarilgan Summa</th>
+                  <th>Izoh</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recentReturns.map((ret) => (
+                  <tr key={ret.id}>
+                    <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{ret.customer.name}</td>
+                    <td>
+                      {ret.items?.map((item, i) => (
+                        <span key={i} className="badge badge-orange" style={{ marginRight: "0.25rem", background: "rgba(234,88,12,0.12)", color: "#ea580c" }}>
+                          R{item.size}×{item.count}
+                        </span>
+                      ))}
+                    </td>
+                    <td className="text-muted" style={{ whiteSpace: "nowrap" }}>
+                      {new Date(ret.date).toLocaleDateString("uz-UZ")}
+                    </td>
+                    <td style={{ fontWeight: 700, color: "var(--accent-red)", whiteSpace: "nowrap" }}>
+                      - {fmt(ret.totalAmount)}
+                    </td>
+                    <td className="text-muted" style={{ fontSize: "0.85rem", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={ret.notes ?? ""}>
+                      {ret.notes || <span style={{ opacity: 0.35 }}>—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Supplier Balances */}
       <div className="card" style={{ marginBottom: "1.5rem" }}>
