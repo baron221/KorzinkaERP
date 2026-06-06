@@ -71,9 +71,12 @@ export default function MijozlarPage() {
       (c.phone ?? "").includes(search)
   );
 
-  const debtCustomers = customers.filter((c) =>
-    c.sales.some((s) => s.debtAmount > 0)
-  );
+  const debtCustomers = customers.filter((c) => {
+    const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
+    const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
+    const totalRet = c.returns?.reduce((s, r) => s + r.totalAmount, 0) || 0;
+    return (totalBuy - totalPaid - totalRet) > 0;
+  });
 
   return (
     <div>
@@ -455,25 +458,73 @@ function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void 
 function DebtList({ customers }: { customers: Customer[] }) {
   if (customers.length === 0) return <div className="empty-state"><Users size={48} /><div>Barcha mijozlar hisob-kitobda ✓</div></div>;
   return (
-    <div className="table-wrapper">
-      <table>
-        <thead><tr><th>Mijoz</th><th>Telefon</th><th>Jami Qarz</th></tr></thead>
-        <tbody>
-          {customers.map((c) => {
-            const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
-            const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
-            const balance = totalBuy - totalPaid;
-            if (balance <= 0) return null;
-            return (
-              <tr key={c.id}>
-                <td style={{ fontWeight: 600 }}>{c.name}</td>
-                <td className="text-muted">{c.phone ?? "—"}</td>
-                <td><span className="badge badge-red" style={{ fontSize: "0.85rem", padding: "0.3rem 0.7rem" }}>{fmtAmount(balance)}</span></td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      {customers.map((c) => {
+        const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
+        const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
+        const totalRet = c.returns?.reduce((s, r) => s + r.totalAmount, 0) || 0;
+        const balance = totalBuy - totalPaid - totalRet;
+        if (balance <= 0) return null;
+
+        let r12_sold = 0, r14_sold = 0, r16_sold = 0;
+        let r12_ret = 0, r14_ret = 0, r16_ret = 0;
+
+        c.sales.forEach(sale => {
+          sale.items?.forEach((item: any) => {
+            if (item.size === 12) r12_sold += item.count;
+            if (item.size === 14) r14_sold += item.count;
+            if (item.size === 16) r16_sold += item.count;
+          });
+        });
+
+        c.returns?.forEach((ret: any) => {
+          ret.items?.forEach((item: any) => {
+            if (item.size === 12) r12_ret += item.count;
+            if (item.size === 14) r14_ret += item.count;
+            if (item.size === 16) r16_ret += item.count;
+          });
+        });
+
+        const r12_net = Math.max(0, r12_sold - r12_ret);
+        const r14_net = Math.max(0, r14_sold - r14_ret);
+        const r16_net = Math.max(0, r16_sold - r16_ret);
+
+        return (
+          <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.85rem 1rem", borderBottom: "1px solid var(--border)", gap: "0.75rem", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{c.name}</div>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>{c.phone ?? "Tel yo'q"}</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+              {(r12_sold > 0 || r12_ret > 0) && (
+                <span 
+                  style={{ fontSize: "0.78rem", fontWeight: 700, background: "rgba(99,102,241,0.12)", color: "#6366f1", borderRadius: "6px", padding: "0.2rem 0.5rem" }}
+                  title={`Sotildi: ${r12_sold} / Qaytdi: ${r12_ret}`}
+                >
+                  R12: {r12_net.toLocaleString()} ta {r12_ret > 0 && <span style={{ color: "var(--accent-orange)", opacity: 0.85, fontSize: "0.7rem" }}>(-{r12_ret})</span>}
+                </span>
+              )}
+              {(r14_sold > 0 || r14_ret > 0) && (
+                <span 
+                  style={{ fontSize: "0.78rem", fontWeight: 700, background: "rgba(16,185,129,0.12)", color: "#10b981", borderRadius: "6px", padding: "0.2rem 0.5rem" }}
+                  title={`Sotildi: ${r14_sold} / Qaytdi: ${r14_ret}`}
+                >
+                  R14: {r14_net.toLocaleString()} ta {r14_ret > 0 && <span style={{ color: "var(--accent-orange)", opacity: 0.85, fontSize: "0.7rem" }}>(-{r14_ret})</span>}
+                </span>
+              )}
+              {(r16_sold > 0 || r16_ret > 0) && (
+                <span 
+                  style={{ fontSize: "0.78rem", fontWeight: 700, background: "rgba(245,158,11,0.12)", color: "#f59e0b", borderRadius: "6px", padding: "0.2rem 0.5rem" }}
+                  title={`Sotildi: ${r16_sold} / Qaytdi: ${r16_ret}`}
+                >
+                  R16: {r16_net.toLocaleString()} ta {r16_ret > 0 && <span style={{ color: "var(--accent-orange)", opacity: 0.85, fontSize: "0.7rem" }}>(-{r16_ret})</span>}
+                </span>
+              )}
+              <span className="badge badge-red" style={{ fontSize: "0.88rem", padding: "0.3rem 0.75rem", fontWeight: 800 }}>{fmtAmount(balance)}</span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

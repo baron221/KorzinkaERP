@@ -211,7 +211,14 @@ export async function GET(req: NextRequest) {
       take: 5,
       where: dateFilter,
       orderBy: { date: "desc" },
-      include: { customer: true },
+      include: { customer: true, items: true },
+    });
+
+    const recentReturns = await prisma.customerReturn.findMany({
+      take: 5,
+      where: dateFilter,
+      orderBy: { date: "desc" },
+      include: { customer: true, items: true },
     });
 
     const suppliers = await prisma.supplier.findMany({
@@ -244,6 +251,7 @@ export async function GET(req: NextRequest) {
       customerCount: await prisma.customer.count(),
       supplierCount: await prisma.supplier.count(),
       recentSales,
+      recentReturns,
     });
   } catch (e) {
     console.error(e);
