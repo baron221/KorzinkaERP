@@ -32,7 +32,28 @@ export async function POST(req: NextRequest) {
         include: { items: true },
       });
 
-      // 2. Activity Log
+      // 2. Update stock — returned items go BACK to warehouse
+      let add12 = 0, add14 = 0, add16 = 0;
+      for (const item of items) {
+        if (Number(item.size) === 12) add12 += Number(item.count);
+        if (Number(item.size) === 14) add14 += Number(item.count);
+        if (Number(item.size) === 16) add16 += Number(item.count);
+      }
+      if (add12 > 0 || add14 > 0 || add16 > 0) {
+        const stock = await tx.stockSnapshot.findFirst();
+        if (stock) {
+          await tx.stockSnapshot.update({
+            where: { id: stock.id },
+            data: {
+              size12Count: { increment: add12 },
+              size14Count: { increment: add14 },
+              size16Count: { increment: add16 },
+            },
+          });
+        }
+      }
+
+      // 3. Activity Log
       await tx.activityLog.create({
         data: {
           action: "CREATE",
