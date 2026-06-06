@@ -176,6 +176,17 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                 if (item.size === 16) r16 += item.count;
               });
             });
+            // Subtract returned items
+            c.returns?.forEach((ret: any) => {
+              ret.items?.forEach((item: any) => {
+                if (item.size === 12) r12 -= item.count;
+                if (item.size === 14) r14 -= item.count;
+                if (item.size === 16) r16 -= item.count;
+              });
+            });
+            if (r12 < 0) r12 = 0;
+            if (r14 < 0) r14 = 0;
+            if (r16 < 0) r16 = 0;
 
             return (
               <div key={c.id} style={{ borderBottom: "1px solid var(--border)" }}>
