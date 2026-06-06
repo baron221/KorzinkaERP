@@ -177,11 +177,12 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
               });
             });
             // Subtract returned items
+            let ret12 = 0, ret14 = 0, ret16 = 0;
             c.returns?.forEach((ret: any) => {
               ret.items?.forEach((item: any) => {
-                if (item.size === 12) r12 -= item.count;
-                if (item.size === 14) r14 -= item.count;
-                if (item.size === 16) r16 -= item.count;
+                if (item.size === 12) { r12 -= item.count; ret12 += item.count; }
+                if (item.size === 14) { r14 -= item.count; ret14 += item.count; }
+                if (item.size === 16) { r16 -= item.count; ret16 += item.count; }
               });
             });
             if (r12 < 0) r12 = 0;
@@ -269,9 +270,14 @@ function CustomerList({ customers, search, setSearch, onDelete, onSelectCustomer
                         <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--accent-green)" }}>{fmtAmount(totalPaid)}</div>
                       </div>
                       {totalRet > 0 && (
-                        <div className="card" style={{ padding: "0.75rem", background: "var(--bg-primary)" }}>
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Qaytarilgan (Vozvrat)</div>
-                          <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--accent-orange)" }}>{fmtAmount(totalRet)}</div>
+                        <div className="card" style={{ padding: "0.75rem 1rem", background: "var(--bg-primary)" }}>
+                          <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.4rem" }}>↩️ Qaytarilgan (Vozvrat)</div>
+                          <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--accent-orange)", marginBottom: "0.4rem" }}>{fmtAmount(totalRet)}</div>
+                          <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                            {ret12 > 0 && <span style={{ fontSize: "0.78rem", fontWeight: 700, background: "rgba(99,102,241,0.12)", color: "#6366f1", borderRadius: "6px", padding: "0.15rem 0.5rem" }}>R12: {ret12.toLocaleString()} ta</span>}
+                            {ret14 > 0 && <span style={{ fontSize: "0.78rem", fontWeight: 700, background: "rgba(16,185,129,0.12)", color: "#10b981", borderRadius: "6px", padding: "0.15rem 0.5rem" }}>R14: {ret14.toLocaleString()} ta</span>}
+                            {ret16 > 0 && <span style={{ fontSize: "0.78rem", fontWeight: 700, background: "rgba(245,158,11,0.12)", color: "#f59e0b", borderRadius: "6px", padding: "0.15rem 0.5rem" }}>R16: {ret16.toLocaleString()} ta</span>}
+                          </div>
                         </div>
                       )}
                       {(r12 > 0 || r14 > 0 || r16 > 0) && (
