@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       oldCounts[item.size] = (oldCounts[item.size] || 0) + item.count;
     });
 
-    // Stock tekshiruvi: ishlab chiqarilgan - sotilgan + eski savdo miqdori >= yangi miqdor
+    // Stock tekshiruvi: ishlab chiqarilgan - sotilgan + qaytarilgan + eski savdo miqdori >= yangi miqdor
     for (const item of filtered) {
       const produced = await prisma.productionItem.aggregate({
         where: { size: item.size },
@@ -59,8 +59,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         where: { size: item.size },
         _sum: { count: true },
       });
+      const returned = await prisma.customerReturnItem.aggregate({
+        where: { size: item.size },
+        _sum: { count: true },
+      });
       const currentStock =
-        (produced._sum.count ?? 0) - (sold._sum.count ?? 0) + (oldCounts[item.size] || 0);
+        (produced._sum.count ?? 0) - (sold._sum.count ?? 0) + (returned._sum.count ?? 0) + (oldCounts[item.size] || 0);
 
       if (currentStock < item.count) {
         return NextResponse.json(
