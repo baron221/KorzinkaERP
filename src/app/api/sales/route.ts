@@ -92,7 +92,11 @@ export async function POST(req: NextRequest) {
         where: { size: item.size },
         _sum: { count: true }
       });
-      const currentStock = (produced._sum.count ?? 0) - (sold._sum.count ?? 0);
+      const returned = await prisma.customerReturnItem.aggregate({
+        where: { size: item.size },
+        _sum: { count: true }
+      });
+      const currentStock = (produced._sum.count ?? 0) - (sold._sum.count ?? 0) + (returned._sum.count ?? 0);
       
       if (currentStock < item.count) {
         return NextResponse.json(
