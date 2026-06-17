@@ -75,6 +75,25 @@ export async function DELETE(req: NextRequest) {
         await prisma.supplierPayment.delete({ where: { id } });
         break;
       }
+      case "customer-payment": {
+        const payment = await prisma.customerPayment.findUnique({ where: { id } });
+        if (payment) {
+          await prisma.activityLog.create({
+            data: { action: "DELETE", entity: "CustomerPayment", entityId: id, snapshot: payment as object },
+          });
+          if (payment.saleId) {
+            await prisma.sale.update({
+              where: { id: payment.saleId },
+              data: {
+                paidAmount: { decrement: payment.amount },
+                debtAmount: { increment: payment.amount },
+              },
+            });
+          }
+        }
+        await prisma.customerPayment.delete({ where: { id } });
+        break;
+      }
       case "expense": {
         const expense = await prisma.expense.findUnique({ where: { id } });
         if (expense) {
@@ -113,6 +132,8 @@ export async function DELETE(req: NextRequest) {
             data: { action: "DELETE", entity: "Sale", entityId: id, snapshot: sale as object },
           });
         }
+        // Delete all associated payments first to prevent orphans
+        await prisma.customerPayment.deleteMany({ where: { saleId: id } });
         await prisma.saleItem.deleteMany({ where: { saleId: id } });
         await prisma.sale.delete({ where: { id } });
         break;

@@ -774,6 +774,19 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
     }
   };
 
+  const handleDeletePayment = async (id: number) => {
+    if (!confirm("Haqiqatan ham bu to'lovni o'chirmoqchimisiz?")) return;
+    const res = await fetch(`/api/delete?type=customer-payment&id=${id}`, { method: "DELETE" });
+    if (res.ok) {
+      // refetch
+      const d = await fetch(`/api/customers/${customerId}`).then(r => r.json());
+      setData(d);
+    } else {
+      const err = await res.json();
+      alert(err.error || "O'chirishda xatolik yuz berdi");
+    }
+  };
+
   let history: any[] = [];
   if (data) {
     data.sales?.forEach((s: any) => {
@@ -914,6 +927,16 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
                                 onClick={() => handleDeleteReturn(parseInt(h.id.replace('r-', '')))}
                                 style={{ background: "transparent", border: "none", color: "var(--accent-red)", cursor: "pointer", padding: "0.2rem" }}
                                 title="Vozvratni o'chirish"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+
+                            {h.type === "payment" && (
+                              <button 
+                                onClick={() => handleDeletePayment(parseInt(h.id.replace('p-', '')))}
+                                style={{ background: "transparent", border: "none", color: "var(--accent-red)", cursor: "pointer", padding: "0.2rem" }}
+                                title="To'lovni o'chirish"
                               >
                                 <Trash2 size={16} />
                               </button>
