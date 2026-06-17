@@ -25,7 +25,7 @@ export async function GET() {
     const enriched = logs.map((log) => ({
       ...log,
       entityLabel: entityLabels[log.entity] || log.entity,
-      actionLabel: log.action === "DELETE" ? "O'chirildi" : "Yaratildi",
+      actionLabel: log.action === "DELETE" ? "O'chirildi" : log.action === "UPDATE" ? "Tahrirlandi" : "Yaratildi",
     }));
 
     return NextResponse.json(enriched);
