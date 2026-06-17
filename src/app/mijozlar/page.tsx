@@ -820,11 +820,18 @@ export function CustomerDetailsModal({ customerId, onClose }: { customerId: numb
       });
     });
 
-    // Sort chronologically: Business date first, then use createdAt for precise timing
+    // Sort primarily by business date (date), and secondarily by registration time (createdAt)
     history.sort((a, b) => {
-      const timeA = new Date(a.createdAt || a.date).getTime();
-      const timeB = new Date(b.createdAt || b.date).getTime();
-      return timeA - timeB;
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      
+      if (dateA !== dateB) {
+        return dateA - dateB;
+      }
+      
+      const createA = a.createdAt ? new Date(a.createdAt).getTime() : dateA;
+      const createB = b.createdAt ? new Date(b.createdAt).getTime() : dateB;
+      return createA - createB;
     });
   }
 
