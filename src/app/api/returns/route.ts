@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { customerId, items, notes, date } = body;
+    const { customerId, items, notes, date, isCashRefund } = body;
 
     if (!customerId || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "Noto'g'ri ma'lumotlar" }, { status: 400 });
@@ -31,6 +31,18 @@ export async function POST(req: NextRequest) {
         },
         include: { items: true },
       });
+
+      // 1b. If cash was refunded to the customer, record a negative payment (cash payout)
+      if (isCashRefund && totalAmount > 0) {
+        await tx.customerPayment.create({
+          data: {
+            customerId: Number(customerId),
+            amount: -totalAmount,
+            date: date ? new Date(date) : new Date(),
+            notes: notes ? `💵 Vozvrat uchun pul naqd qaytarildi — ${notes}` : "💵 Vozvrat uchun pul naqd qaytarildi",
+          },
+        });
+      }
 
       // 2. Update stock — returned items go BACK to warehouse
       let add12 = 0, add14 = 0, add16 = 0;
@@ -59,7 +71,10 @@ export async function POST(req: NextRequest) {
           action: "CREATE",
           entity: "CustomerReturn",
           entityId: ret.id,
-          snapshot: ret as any,
+          snapshot: {
+            ...ret,
+            isCashRefund: !!isCashRefund,
+          } as any,
         },
       });
 
