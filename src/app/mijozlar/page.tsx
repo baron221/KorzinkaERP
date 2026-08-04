@@ -1131,6 +1131,7 @@ function AddReturnModal({ customer, onClose, onSuccess }: { customer: Customer; 
   const [items, setItems] = useState([{ size: 12, count: 0, unitPrice: 0 }]);
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [isCashRefund, setIsCashRefund] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const totalAmount = items.reduce((s, i) => s + (i.count || 0) * (i.unitPrice || 0), 0);
@@ -1160,7 +1161,8 @@ function AddReturnModal({ customer, onClose, onSuccess }: { customer: Customer; 
           customerId: customer.id,
           date,
           notes,
-          items: validItems
+          items: validItems,
+          isCashRefund,
         }),
       });
       if (res.ok) onSuccess();
@@ -1214,10 +1216,41 @@ function AddReturnModal({ customer, onClose, onSuccess }: { customer: Customer; 
         {totalAmount > 0 && (
           <div className="alert" style={{ marginBottom: "1rem", background: "var(--accent-orange-light)", color: "var(--accent-orange)", border: "1px solid var(--accent-orange)" }}>
             Jami vozvrat summasi: <strong>{fmtAmount(totalAmount)}</strong>
-            <br />
-            <span style={{ fontSize: "0.85rem", opacity: 0.8 }}>(Bu summa mijozning qarzidan ayirib tashlanadi)</span>
           </div>
         )}
+
+        <div 
+          onClick={() => setIsCashRefund(!isCashRefund)}
+          style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "0.75rem", 
+            padding: "0.75rem 1rem", 
+            borderRadius: "12px", 
+            background: isCashRefund ? "rgba(16,185,129,0.1)" : "var(--bg-secondary)", 
+            border: `1.5px solid ${isCashRefund ? "#10b981" : "var(--border)"}`, 
+            cursor: "pointer", 
+            marginBottom: "1rem", 
+            transition: "all 0.2s ease" 
+          }}
+        >
+          <input 
+            type="checkbox" 
+            checked={isCashRefund} 
+            onChange={(e) => setIsCashRefund(e.target.checked)} 
+            style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#10b981" }}
+          />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "0.88rem", color: isCashRefund ? "#10b981" : "var(--text-primary)" }}>
+              💵 Pulini naqd qaytardim (kassadan berildi)
+            </div>
+            <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+              {isCashRefund 
+                ? "Mijozga pul qaytarib berilgani belgilandi. Balans nol bo'lib qoladi (haqdor bo'lmaydi)." 
+                : "Belgilanmasa: Vozvrat summasi mijozning qarzidan ayiriladi yoki unga haqdorlik/avans yoziladi."}
+            </div>
+          </div>
+        </div>
 
         <div className="form-group"><label>Izoh</label><input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ixtiyoriy" /></div>
 
