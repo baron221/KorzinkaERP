@@ -1,5 +1,5 @@
 {
-  "exportedAt": "2026-08-29T10:31:13.249Z",
+  "exportedAt": "2026-08-29T15:05:26.819Z",
   "suppliers": [
     {
       "id": 23,
@@ -6921,17 +6921,6 @@
       "updatedAt": "2026-08-16T05:02:13.492Z"
     },
     {
-      "id": 405,
-      "customerId": 59,
-      "date": "2026-08-16T00:00:00.000Z",
-      "totalAmount": 3877800,
-      "paidAmount": 0,
-      "debtAmount": 3877800,
-      "notes": null,
-      "createdAt": "2026-08-16T05:06:16.316Z",
-      "updatedAt": "2026-08-16T05:06:16.316Z"
-    },
-    {
       "id": 407,
       "customerId": 74,
       "date": "2026-08-17T00:00:00.000Z",
@@ -6952,17 +6941,6 @@
       "notes": null,
       "createdAt": "2026-08-17T11:11:54.144Z",
       "updatedAt": "2026-08-17T11:11:54.144Z"
-    },
-    {
-      "id": 409,
-      "customerId": 59,
-      "date": "2026-08-17T00:00:00.000Z",
-      "totalAmount": 460000,
-      "paidAmount": 0,
-      "debtAmount": 460000,
-      "notes": null,
-      "createdAt": "2026-08-17T11:12:23.042Z",
-      "updatedAt": "2026-08-17T11:12:23.042Z"
     },
     {
       "id": 346,
@@ -6996,17 +6974,6 @@
       "notes": null,
       "createdAt": "2026-08-13T09:18:49.847Z",
       "updatedAt": "2026-08-17T11:12:47.332Z"
-    },
-    {
-      "id": 398,
-      "customerId": 59,
-      "date": "2026-08-14T00:00:00.000Z",
-      "totalAmount": 2300000,
-      "paidAmount": 2296000,
-      "debtAmount": 4000,
-      "notes": null,
-      "createdAt": "2026-08-14T14:19:34.315Z",
-      "updatedAt": "2026-08-17T11:12:47.335Z"
     },
     {
       "id": 381,
@@ -7491,6 +7458,39 @@
       "notes": null,
       "createdAt": "2026-08-29T10:28:16.110Z",
       "updatedAt": "2026-08-29T10:28:16.110Z"
+    },
+    {
+      "id": 398,
+      "customerId": 59,
+      "date": "2026-08-14T00:00:00.000Z",
+      "totalAmount": 2300000,
+      "paidAmount": 2300000,
+      "debtAmount": 0,
+      "notes": null,
+      "createdAt": "2026-08-14T14:19:34.315Z",
+      "updatedAt": "2026-08-29T14:38:02.956Z"
+    },
+    {
+      "id": 405,
+      "customerId": 59,
+      "date": "2026-08-16T00:00:00.000Z",
+      "totalAmount": 3877800,
+      "paidAmount": 3877800,
+      "debtAmount": 0,
+      "notes": null,
+      "createdAt": "2026-08-16T05:06:16.316Z",
+      "updatedAt": "2026-08-29T14:38:02.965Z"
+    },
+    {
+      "id": 409,
+      "customerId": 59,
+      "date": "2026-08-17T00:00:00.000Z",
+      "totalAmount": 460000,
+      "paidAmount": 98200,
+      "debtAmount": 361800,
+      "notes": null,
+      "createdAt": "2026-08-17T11:12:23.042Z",
+      "updatedAt": "2026-08-29T14:38:02.968Z"
     }
   ],
   "saleItems": [
@@ -12257,6 +12257,15 @@
       "date": "2026-08-29T00:00:00.000Z",
       "notes": "Savdo vaqtidagi to'lov",
       "createdAt": "2026-08-29T10:28:16.136Z"
+    },
+    {
+      "id": 200,
+      "customerId": 59,
+      "saleId": null,
+      "amount": 3980000,
+      "date": "2026-08-29T00:00:00.000Z",
+      "notes": "Avans (Oldindan kiritildi)",
+      "createdAt": "2026-08-29T14:38:02.768Z"
     }
   ],
   "customerReturns": [
@@ -39216,6 +39225,22 @@
         "totalAmount": 94000
       },
       "createdAt": "2026-08-29T10:28:16.143Z"
+    },
+    {
+      "id": 901,
+      "action": "CREATE",
+      "entity": "CustomerPayment",
+      "entityId": 200,
+      "snapshot": {
+        "id": 200,
+        "date": "2026-08-29T00:00:00.000Z",
+        "notes": "Avans (Oldindan kiritildi)",
+        "amount": 3980000,
+        "saleId": null,
+        "createdAt": "2026-08-29T14:38:02.768Z",
+        "customerId": 59
+      },
+      "createdAt": "2026-08-29T14:38:02.971Z"
     }
   ]
 }

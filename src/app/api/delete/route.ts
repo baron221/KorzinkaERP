@@ -166,6 +166,37 @@ export async function DELETE(req: NextRequest) {
             }
           }
 
+          // Clean up associated cash refund payment if it exists
+          const refundPayment = await prisma.customerPayment.findFirst({
+            where: {
+              customerId: ret.customerId,
+              amount: -ret.totalAmount,
+              notes: { contains: "Vozvrat" },
+            },
+          });
+          if (refundPayment) {
+            await prisma.customerPayment.delete({ where: { id: refundPayment.id } });
+          } else {
+            // Restore sale debt if it was deducted from sales
+            let remainingRestore = ret.totalAmount;
+            const customerSales = await prisma.sale.findMany({
+              where: { customerId: ret.customerId },
+              orderBy: { date: "desc" },
+            });
+            for (const s of customerSales) {
+              if (remainingRestore <= 0) break;
+              const maxRestore = s.totalAmount - s.paidAmount - s.debtAmount;
+              if (maxRestore > 0) {
+                const restore = Math.min(maxRestore, remainingRestore);
+                await prisma.sale.update({
+                  where: { id: s.id },
+                  data: { debtAmount: { increment: restore } },
+                });
+                remainingRestore -= restore;
+              }
+            }
+          }
+
           await prisma.customerReturnItem.deleteMany({ where: { returnId: id } });
           await prisma.customerReturn.delete({ where: { id } });
         }

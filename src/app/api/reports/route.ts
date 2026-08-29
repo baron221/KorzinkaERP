@@ -10,8 +10,11 @@ export async function GET() {
   const returnAgg = await prisma.customerReturn.aggregate({
     _sum: { totalAmount: true },
   });
+  const paymentAgg = await prisma.customerPayment.aggregate({
+    _sum: { amount: true },
+  });
   const totalRevenue = (saleAgg._sum.totalAmount ?? 0) - (returnAgg._sum.totalAmount ?? 0);
-  const totalCollected = saleAgg._sum.paidAmount ?? 0;
+  const totalCollected = paymentAgg._sum.amount ?? 0;
 
   const customers = await prisma.customer.findMany({
     include: {
@@ -127,8 +130,22 @@ export async function GET() {
   const netProfit = totalRevenue - totalCOGS - totalExpenses;
   const grossProfit = totalRevenue - totalCOGS;
 
-  // Stock
-  const stock = await prisma.stockSnapshot.findFirst();
+  // Dynamic Stock
+  const producedItems = await prisma.productionItem.groupBy({ by: ["size"], _sum: { count: true } });
+  const soldItems = await prisma.saleItem.groupBy({ by: ["size"], _sum: { count: true } });
+  const returnedItems = await prisma.customerReturnItem.groupBy({ by: ["size"], _sum: { count: true } });
+
+  const getStock = (size: number) => {
+    const p = producedItems.find(i => i.size === size)?._sum.count ?? 0;
+    const s = soldItems.find(i => i.size === size)?._sum.count ?? 0;
+    const r = returnedItems.find(i => i.size === size)?._sum.count ?? 0;
+    return p - s + r;
+  };
+  const stock = {
+    size12Count: getStock(12),
+    size14Count: getStock(14),
+    size16Count: getStock(16),
+  };
 
   return NextResponse.json({
     totalRevenue,
