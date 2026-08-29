@@ -42,6 +42,25 @@ export async function POST(req: NextRequest) {
             notes: notes ? `💵 Vozvrat uchun pul naqd qaytarildi — ${notes}` : "💵 Vozvrat uchun pul naqd qaytarildi",
           },
         });
+      } else if (totalAmount > 0) {
+        // 1c. If return is deducted from debt, adjust open customer sales' debtAmount
+        let remainingReturn = totalAmount;
+        const openSales = await tx.sale.findMany({
+          where: { customerId: Number(customerId), debtAmount: { gt: 0 } },
+          orderBy: { date: "asc" },
+        });
+
+        for (const s of openSales) {
+          if (remainingReturn <= 0) break;
+          const deduct = Math.min(s.debtAmount, remainingReturn);
+          await tx.sale.update({
+            where: { id: s.id },
+            data: {
+              debtAmount: { decrement: deduct },
+            },
+          });
+          remainingReturn -= deduct;
+        }
       }
 
       // 2. Update stock — returned items go BACK to warehouse

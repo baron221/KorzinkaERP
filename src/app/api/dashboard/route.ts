@@ -72,6 +72,10 @@ export async function GET(req: NextRequest) {
       where: dateFilter,
       _sum: { totalAmount: true, paidAmount: true },
     });
+    const filteredPaymentAgg = await prisma.customerPayment.aggregate({
+      where: dateFilter,
+      _sum: { amount: true },
+    });
     const filteredReturnAgg = await prisma.customerReturn.aggregate({
       where: dateFilter,
       _sum: { totalAmount: true },
@@ -238,7 +242,7 @@ export async function GET(req: NextRequest) {
       totalCOGS,
       netProfit,
       totalNetProfit,
-      totalPaid: filteredSaleAgg._sum.paidAmount ?? 0,
+      totalPaid: filteredPaymentAgg._sum.amount ?? 0,
       customerDebt: totalCustomerDebt,
       customerCredit: totalCustomerCredit,
       debtCustomerCount: customersWithDebt,
