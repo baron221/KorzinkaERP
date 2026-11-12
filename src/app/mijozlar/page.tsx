@@ -53,6 +53,12 @@ export default function MijozlarPage() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // Bosh sahifadagi "Mijozlar Qarzi" kartasidan kelinganda (?sort=debt) qarzdorlar tepaga chiqadi
+  const [debtFirst, setDebtFirst] = useState(false);
+  useEffect(() => {
+    setDebtFirst(new URLSearchParams(window.location.search).get("sort") === "debt");
+  }, []);
+
   const handleDelete = async (type: string, id: number) => {
     if (!confirm("O'chirishni tasdiqlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.")) return;
     try {
@@ -65,18 +71,27 @@ export default function MijozlarPage() {
     }
   };
 
-  const filtered = customers.filter(
+  const balanceOf = (c: Customer) => {
+    const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
+    const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
+    const totalRet = c.returns?.reduce((s, r) => s + r.totalAmount, 0) || 0;
+    return totalBuy - totalPaid - totalRet;
+  };
+
+  const matched = customers.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       (c.phone ?? "").includes(search)
   );
+  // Qarzdorlar tepada (eng katta qarz birinchi), qolganlar o'z tartibida
+  const filtered = debtFirst
+    ? [
+        ...matched.filter((c) => balanceOf(c) > 0).sort((a, b) => balanceOf(b) - balanceOf(a)),
+        ...matched.filter((c) => balanceOf(c) <= 0),
+      ]
+    : matched;
 
-  const debtCustomers = customers.filter((c) => {
-    const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
-    const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
-    const totalRet = c.returns?.reduce((s, r) => s + r.totalAmount, 0) || 0;
-    return (totalBuy - totalPaid - totalRet) > 0;
-  });
+  const debtCustomers = customers.filter((c) => balanceOf(c) > 0);
 
   return (
     <div>
@@ -447,10 +462,29 @@ function SalesList({ onDelete }: { onDelete: (type: string, id: number) => void 
 }
 
 function DebtList({ customers }: { customers: Customer[] }) {
+  const [search, setSearch] = useState("");
+
   if (customers.length === 0) return <div className="empty-state"><Users size={48} /><div>Barcha mijozlar hisob-kitobda ✓</div></div>;
+
+  const q = search.trim().toLowerCase();
+  const filtered = customers.filter(
+    (c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(q)
+  );
+
   return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
+        <div className="search-bar" style={{ maxWidth: 400, flex: 1 }}>
+          <Search size={14} className="search-icon" style={{ position: "absolute", left: "0.7rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)" }} />
+          <input className="input" style={{ paddingLeft: "2.2rem" }} placeholder="Ism yoki telefon orqali qidirish..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="empty-state"><Users size={48} /><div>Qarzdor topilmadi</div></div>
+      ) : (
     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-      {customers.map((c) => {
+      {filtered.map((c) => {
         const totalBuy = c.sales.reduce((s, sale) => s + sale.totalAmount, 0);
         const totalPaid = c.customerPayments?.reduce((s, p) => s + p.amount, 0) || 0;
         const totalRet = c.returns?.reduce((s, r) => s + r.totalAmount, 0) || 0;
@@ -516,6 +550,8 @@ function DebtList({ customers }: { customers: Customer[] }) {
           </div>
         );
       })}
+    </div>
+      )}
     </div>
   );
 }

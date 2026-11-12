@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { REAL_SALE } from "@/lib/season";
 
 // GET /api/reports — full P&L report
 export async function GET() {
   // Total revenue (from sales)
   const saleAgg = await prisma.sale.aggregate({
+    where: REAL_SALE,
     _sum: { totalAmount: true, paidAmount: true, debtAmount: true },
   });
   const returnAgg = await prisma.customerReturn.aggregate({
@@ -37,7 +39,13 @@ export async function GET() {
     _sum: { totalAmount: true, paidAmount: true, debtAmount: true, weightKg: true },
   });
   const totalRawCost = rawAgg._sum.totalAmount ?? 0;
-  const totalSupplierDebt = rawAgg._sum.debtAmount ?? 0;
+  // Dashboard bilan bir xil: to'lanmagan seryo qarzi minus bog'lanmagan to'lovlar
+  // (o'tgan sezondan ko'chgan qarz manfiy bog'lanmagan to'lov sifatida saqlanadi)
+  const unlinkedSupplierPayments = await prisma.supplierPayment.aggregate({
+    where: { rawMaterialId: null },
+    _sum: { amount: true },
+  });
+  const totalSupplierDebt = (rawAgg._sum.debtAmount ?? 0) - (unlinkedSupplierPayments._sum.amount ?? 0);
 
   // Total expenses
   const expenseAgg = await prisma.expense.aggregate({
@@ -60,7 +68,7 @@ export async function GET() {
     const label = d.toLocaleString("uz-UZ", { month: "short", year: "2-digit" });
 
     const rev = await prisma.sale.aggregate({
-      where: { date: { gte: d, lt: nextD } },
+      where: { date: { gte: d, lt: nextD }, ...REAL_SALE },
       _sum: { totalAmount: true },
     });
     const ret = await prisma.customerReturn.aggregate({

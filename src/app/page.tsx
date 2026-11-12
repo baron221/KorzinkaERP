@@ -123,7 +123,7 @@ export default function DashboardPage() {
       gradient: "linear-gradient(135deg, #dc2626, #ef4444)",
       lightBg: "#fee2e2",
       iconColor: "#dc2626",
-      href: "/mijozlar",
+      href: "/mijozlar?sort=debt",
     },
     {
       label: "Mijozlar Haqqi",

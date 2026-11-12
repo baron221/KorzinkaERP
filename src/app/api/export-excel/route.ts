@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import * as xlsx from "xlsx";
+import { OPENING_SALE } from "@/lib/season";
 
 export async function GET() {
   try {
@@ -38,7 +39,12 @@ export async function GET() {
     const saleAgg = await prisma.sale.aggregate({
       _sum: { totalAmount: true, paidAmount: true, debtAmount: true },
     });
-    const totalRevenue = saleAgg._sum.totalAmount ?? 0;
+    // O'tgan sezondan ko'chgan qarz (mahsulotsiz savdo) daromadga kirmaydi
+    const openingAgg = await prisma.sale.aggregate({
+      where: OPENING_SALE,
+      _sum: { totalAmount: true },
+    });
+    const totalRevenue = (saleAgg._sum.totalAmount ?? 0) - (openingAgg._sum.totalAmount ?? 0);
     const totalCollected = saleAgg._sum.paidAmount ?? 0;
     const totalCustomerDebt = saleAgg._sum.debtAmount ?? 0;
 

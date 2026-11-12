@@ -10,7 +10,8 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign, AlertCircle, Download } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, AlertCircle, Download, RotateCcw, X } from "lucide-react";
+import { SEASON_CONFIRM_WORD } from "@/lib/season";
 
 interface ReportData {
   totalRevenue: number;
@@ -57,9 +58,149 @@ const CustomTooltip = ({ active, payload, label }: {
   return null;
 };
 
+interface CloseSummary {
+  customerDebtCount: number;
+  customerDebtTotal: number;
+  customerCreditCount: number;
+  customerCreditTotal: number;
+  supplierDebtTotal: number;
+  supplierCreditTotal: number;
+  rawStockKg: number;
+  baskets: Array<{ size: number; count: number }>;
+}
+
+function CloseSeasonModal({ onClose }: { onClose: () => void }) {
+  const [excelDone, setExcelDone] = useState(false);
+  const [backupDone, setBackupDone] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [summary, setSummary] = useState<CloseSummary | null>(null);
+
+  // Faylni fetch orqali yuklaymiz: shunda fayl haqiqatan kelganini bilamiz
+  // va faqat shundan keyin yopish tugmasini ochamiz.
+  const download = async (url: string, fallbackName: string, done: (v: boolean) => void) => {
+    setError("");
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || "Faylni yuklab bo'lmadi");
+      }
+      const blob = await res.blob();
+      const name = res.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ?? fallbackName;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+      done(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Faylni yuklab bo'lmadi");
+    }
+  };
+
+  const canClose = excelDone && backupDone && confirmText.trim().toUpperCase() === SEASON_CONFIRM_WORD && !saving;
+
+  const closeSeason = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/season/close", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: SEASON_CONFIRM_WORD }),
+      });
+      const j = await res.json();
+      if (!res.ok || j.error) throw new Error(j.error || "Xatolik yuz berdi");
+      setSummary(j.summary);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Xatolik yuz berdi");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const stepStyle = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", padding: "0.6rem 0", borderBottom: "1px solid var(--border)", flexWrap: "wrap" as const };
+
+  if (summary) {
+    return (
+      <div className="modal-backdrop">
+        <div className="modal">
+          <div className="modal-title"><span>✅ Sezon yopildi</span></div>
+          <div style={{ fontSize: "0.88rem", lineHeight: 1.7 }}>
+            <div>Yangi sezonga ko'chirildi:</div>
+            <div>• Mijozlar qarzi: <b>{fmt(summary.customerDebtTotal)}</b> ({summary.customerDebtCount} ta mijoz)</div>
+            {summary.customerCreditCount > 0 && <div>• Mijozlar avansi: <b>{fmt(summary.customerCreditTotal)}</b> ({summary.customerCreditCount} ta mijoz)</div>}
+            <div>• Ta'minotchilarga qarz: <b>{fmt(summary.supplierDebtTotal)}</b></div>
+            {summary.supplierCreditTotal > 0 && <div>• Ta'minotchilardagi avans: <b>{fmt(summary.supplierCreditTotal)}</b></div>}
+            <div>• Seryo qoldig'i: <b>{new Intl.NumberFormat("uz-UZ").format(Math.round(summary.rawStockKg))} kg</b></div>
+            <div>• Korzinkalar: <b>{summary.baskets.length === 0 ? "yo'q" : summary.baskets.map((b) => `R${b.size}: ${b.count} ta`).join(", ")}</b></div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
+            <button className="btn btn-primary btn-sm" onClick={() => window.location.reload()}>Yopish</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={saving ? undefined : onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-title">
+          <span>🔄 Sezonni yopish</span>
+          <button className="btn btn-secondary btn-sm" onClick={onClose} disabled={saving}><X size={14} /></button>
+        </div>
+
+        <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
+          Barcha savdo, to'lov, vozvrat, seryo kirimi, ishlab chiqarish, xarajat va tarix yozuvlari <b style={{ color: "var(--accent-red)" }}>o'chiriladi</b>.
+          Mijozlar va ta'minotchilar ro'yxati, ularning qolgan qarzlari va ombordagi qoldiq yangi sezonga o'tadi.
+          Bu amalni ortga qaytarib bo'lmaydi.
+        </div>
+
+        <div style={stepStyle}>
+          <span style={{ fontSize: "0.88rem" }}>1. Excel hisobotni yuklab oling {excelDone && "✅"}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => download("/api/export-excel", "Barcha_Hisobotlar.xlsx", setExcelDone)}>
+            <Download size={14} /> Excel
+          </button>
+        </div>
+        <div style={stepStyle}>
+          <span style={{ fontSize: "0.88rem" }}>2. To'liq zaxira nusxani yuklab oling {backupDone && "✅"}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => download("/api/season/backup", "sezon_backup.json", setBackupDone)}>
+            <Download size={14} /> Zaxira (JSON)
+          </button>
+        </div>
+
+        <div className="form-group" style={{ marginTop: "0.9rem" }}>
+          <label>3. Tasdiqlash uchun <b>{SEASON_CONFIRM_WORD}</b> deb yozing</label>
+          <input className="input" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder={SEASON_CONFIRM_WORD} disabled={!excelDone || !backupDone || saving} />
+        </div>
+
+        {error && <div style={{ color: "var(--accent-red)", fontSize: "0.82rem", marginBottom: "0.75rem" }}>{error}</div>}
+
+        <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+          <button className="btn btn-secondary btn-sm" onClick={onClose} disabled={saving}>Bekor</button>
+          <button
+            className="btn btn-sm"
+            onClick={closeSeason}
+            disabled={!canClose}
+            style={{ background: "var(--accent-red, #ef4444)", color: "white", opacity: canClose ? 1 : 0.5, cursor: canClose ? "pointer" : "not-allowed" }}
+          >
+            {saving ? "Yopilmoqda..." : "Sezonni yopish"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function HisobotPage() {
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showCloseSeason, setShowCloseSeason] = useState(false);
 
   useEffect(() => {
     fetch(`/api/reports?t=${Date.now()}`).then((r) => r.json()).then((d) => { setData(d); setLoading(false); });
@@ -84,17 +225,28 @@ export default function HisobotPage() {
           <div className="page-title">Hisobot va Sof Foyda</div>
           <div className="page-sub">Foyda va Zarar (P&L) hisobot</div>
         </div>
-        <button
-          onClick={() => {
-            window.location.href = "/api/export-excel";
-          }}
-          className="btn-primary"
-          style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.6rem 1.2rem", borderRadius: "8px", border: "none", cursor: "pointer", background: "var(--accent-blue, #3b82f6)", color: "white", fontWeight: 600, fontSize: "0.9rem" }}
-        >
-          <Download size={18} />
-          Excelga Yuklash
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <button
+            onClick={() => {
+              window.location.href = "/api/export-excel";
+            }}
+            className="btn-primary"
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.6rem 1.2rem", borderRadius: "8px", border: "none", cursor: "pointer", background: "var(--accent-blue, #3b82f6)", color: "white", fontWeight: 600, fontSize: "0.9rem" }}
+          >
+            <Download size={18} />
+            Excelga Yuklash
+          </button>
+          <button
+            onClick={() => setShowCloseSeason(true)}
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.6rem 1.2rem", borderRadius: "8px", border: "1px solid var(--accent-red, #ef4444)", cursor: "pointer", background: "transparent", color: "var(--accent-red, #ef4444)", fontWeight: 600, fontSize: "0.9rem" }}
+          >
+            <RotateCcw size={18} />
+            Sezonni yopish
+          </button>
+        </div>
       </div>
+
+      {showCloseSeason && <CloseSeasonModal onClose={() => setShowCloseSeason(false)} />}
 
       {/* Net Profit Banner */}
       <div
