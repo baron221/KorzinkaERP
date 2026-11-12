@@ -59,14 +59,13 @@ const CustomTooltip = ({ active, payload, label }: {
 };
 
 interface CloseSummary {
-  customerDebtCount: number;
-  customerDebtTotal: number;
-  customerCreditCount: number;
-  customerCreditTotal: number;
-  supplierDebtTotal: number;
-  supplierCreditTotal: number;
-  rawStockKg: number;
-  baskets: Array<{ size: number; count: number }>;
+  sales: number;
+  customerPayments: number;
+  returns: number;
+  rawMaterials: number;
+  supplierPayments: number;
+  productionBatches: number;
+  expenses: number;
 }
 
 function CloseSeasonModal({ onClose }: { onClose: () => void }) {
@@ -131,13 +130,14 @@ function CloseSeasonModal({ onClose }: { onClose: () => void }) {
         <div className="modal">
           <div className="modal-title"><span>✅ Sezon yopildi</span></div>
           <div style={{ fontSize: "0.88rem", lineHeight: 1.7 }}>
-            <div>Yangi sezonga ko'chirildi:</div>
-            <div>• Mijozlar qarzi: <b>{fmt(summary.customerDebtTotal)}</b> ({summary.customerDebtCount} ta mijoz)</div>
-            {summary.customerCreditCount > 0 && <div>• Mijozlar avansi: <b>{fmt(summary.customerCreditTotal)}</b> ({summary.customerCreditCount} ta mijoz)</div>}
-            <div>• Ta'minotchilarga qarz: <b>{fmt(summary.supplierDebtTotal)}</b></div>
-            {summary.supplierCreditTotal > 0 && <div>• Ta'minotchilardagi avans: <b>{fmt(summary.supplierCreditTotal)}</b></div>}
-            <div>• Seryo qoldig'i: <b>{new Intl.NumberFormat("uz-UZ").format(Math.round(summary.rawStockKg))} kg</b></div>
-            <div>• Korzinkalar: <b>{summary.baskets.length === 0 ? "yo'q" : summary.baskets.map((b) => `R${b.size}: ${b.count} ta`).join(", ")}</b></div>
+            <div>Barcha hisob-kitoblar 0 ga tushirildi. O'chirilgan yozuvlar:</div>
+            <div>• Savdolar: <b>{summary.sales} ta</b></div>
+            <div>• Mijoz to'lovlari: <b>{summary.customerPayments} ta</b></div>
+            <div>• Vozvratlar: <b>{summary.returns} ta</b></div>
+            <div>• Seryo kirimlari: <b>{summary.rawMaterials} ta</b></div>
+            <div>• Ta'minotchi to'lovlari: <b>{summary.supplierPayments} ta</b></div>
+            <div>• Ishlab chiqarish partiyalari: <b>{summary.productionBatches} ta</b></div>
+            <div>• Xarajatlar: <b>{summary.expenses} ta</b></div>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
             <button className="btn btn-primary btn-sm" onClick={() => window.location.reload()}>Yopish</button>
@@ -157,7 +157,8 @@ function CloseSeasonModal({ onClose }: { onClose: () => void }) {
 
         <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
           Barcha savdo, to'lov, vozvrat, seryo kirimi, ishlab chiqarish, xarajat va tarix yozuvlari <b style={{ color: "var(--accent-red)" }}>o'chiriladi</b>.
-          Mijozlar va ta'minotchilar ro'yxati, ularning qolgan qarzlari va ombordagi qoldiq yangi sezonga o'tadi.
+          Barcha qarzlar, avanslar va ombor qoldig'i <b style={{ color: "var(--accent-red)" }}>0 ga tushadi</b> — yangi sezonga hech narsa o'tmaydi.
+          Faqat mijozlar va ta'minotchilar ro'yxati (ism, telefon) saqlanadi.
           Bu amalni ortga qaytarib bo'lmaydi.
         </div>
 
