@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { REAL_SALE } from "@/lib/season";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
     const supplierDebt = totalMaterialDebt - totalPrepayments;
 
     const filteredSaleAgg = await prisma.sale.aggregate({
-      where: dateFilter,
+      where: { ...dateFilter, ...REAL_SALE },
       _sum: { totalAmount: true, paidAmount: true },
     });
     const filteredPaymentAgg = await prisma.customerPayment.aggregate({
@@ -189,7 +190,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Restore Profit calculation
-    const allTimeSaleAgg = await prisma.sale.aggregate({ _sum: { totalAmount: true } });
+    const allTimeSaleAgg = await prisma.sale.aggregate({ where: REAL_SALE, _sum: { totalAmount: true } });
     const allTimeReturnAgg = await prisma.customerReturn.aggregate({ _sum: { totalAmount: true } });
     const allTimeRev = (allTimeSaleAgg._sum.totalAmount ?? 0) - (allTimeReturnAgg._sum.totalAmount ?? 0);
     
@@ -213,7 +214,7 @@ export async function GET(req: NextRequest) {
 
     const recentSales = await prisma.sale.findMany({
       take: 5,
-      where: dateFilter,
+      where: { ...dateFilter, ...REAL_SALE },
       orderBy: { date: "desc" },
       include: { customer: true, items: true },
     });
