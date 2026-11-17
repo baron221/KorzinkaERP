@@ -743,10 +743,7 @@ function AddPaymentModal({ customers, onClose, onSuccess }: {
         </div>
         <div className="form-group">
           <label>Mijoz *</label>
-          <select className="input" value={customerId} onChange={(e) => { setCustomerId(e.target.value); setSaleId(""); }}>
-            <option value="">Tanlang...</option>
-            {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <CustomerSelect customers={customers} value={customerId} onChange={(id) => { setCustomerId(id); setSaleId(""); }} />
         </div>
         {sales.length > 0 && (
           <div className="form-group">
@@ -1095,10 +1092,7 @@ function EditSaleModal({ saleId, onClose, onSuccess }: {
             <div className="grid-2">
               <div className="form-group">
                 <label>Mijoz *</label>
-                <select className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-                  <option value="">Tanlang...</option>
-                  {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <CustomerSelect customers={customers} value={customerId} onChange={setCustomerId} />
               </div>
               <div className="form-group"><label>Sana</label><input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} /></div>
             </div>
