@@ -174,9 +174,21 @@ async function restoreAll() {
       }
     }
 
+    // 12. ID hisoblagichlarini to'g'rilash: yozuvlar o'z ID si bilan kiritilgani uchun
+    // PostgreSQL hisoblagichi 1 da qolib ketadi va yangi yozuv qo'shishda xato beradi.
+    const tables = ['Supplier', 'RawMaterial', 'SupplierPayment', 'ProductionBatch', 'ProductionItem',
+      'Customer', 'Sale', 'SaleItem', 'CustomerPayment', 'CustomerReturn', 'CustomerReturnItem',
+      'Expense', 'StockSnapshot', 'ActivityLog'];
+    for (const t of tables) {
+      await prisma.$queryRawUnsafe(
+        `SELECT setval(pg_get_serial_sequence('"${t}"', 'id'), COALESCE((SELECT MAX(id) FROM "${t}"), 0) + 1, false)`
+      );
+    }
+
     console.log('🎉 Barcha ma\'lumotlar muvaffaqiyatli tiklandi va bazaga yozildi!');
   } catch (e) {
     console.error('❌ Tiklashda xatolik:', e);
+    process.exitCode = 1;
   } finally {
     await prisma.$disconnect();
   }

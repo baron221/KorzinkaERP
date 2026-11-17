@@ -1,6 +1,7 @@
 @echo off
 chcp 65001 > NUL
 title Korzinka ERP CRM - Bazani Tiklash (Restore)
+cd /d "%~dp0"
 
 echo ========================================================
 echo   📥 'database_backup.json' FAYLIDAN BAZANI TIKLASH
