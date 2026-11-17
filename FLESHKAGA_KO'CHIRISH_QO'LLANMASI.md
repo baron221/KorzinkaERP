@@ -1,58 +1,64 @@
-# 🧺 Korzinka ERP CRM — Fleshkaga Ko'chirish va Tizimni Egasiga Topshirish Qo'llanmasi
+# Korzinka ERP CRM — mijoz kompyuteriga o'rnatish qo'llanmasi
 
-Ushbu loyiha, uning barcha kodlari hamda ma'lumotlar bazasidagi **barcha mavjud yozuvlar** (mijozlar, savdolar, to'lovlar, xomashyo, ishlab chiqarish, xarajatlar va tarix) to'liq zaxiralanib, fleshkaga ko'chirish va yangi kompyuterda ishlatish uchun tayyorlandi.
+Bu qo'llanma dasturni mijozning kompyuteriga **lokal server** qilib o'rnatish uchun. O'rnatilgach dastur internetsiz ishlaydi: baza ham, dastur ham shu kompyuterda turadi, telefon va boshqa kompyuterlar unga shu binodagi Wi‑Fi orqali ulanadi.
 
----
-
-## 📁 1. Fleshkaga qaysi fayllarni ko'chirish kerak?
-
-Fleshkaga ko'chirish tezroq va hajmi kichik (xavfsiz) bo'lishi uchun **butun loyiha papkasini (`CRM`)** ko'chirasiz, **faqat quyidagi 2 ta og'ir papkani tashlab o'tsangiz bo'ladi**:
-- `node_modules` (buni yangi kompyuterda avtomatik o'zi tiklaydi)
-- `.next` (vaqtincha kesh papkasi)
-
-### Fleshkaga tushishi shart bo'lgan eng muhim fayllar:
-- 📄 **`database_backup.json`** — Loyihadagi barcha 395 ta savdo, 55 ta mijoz, 125 ta ishlab chiqarish partiyasi, 178 ta to'lov, 21 ta vozvrat va barcha tarixiy ma'lumotlarning **asosiy zaxirasi (backup)**.
-- 🚀 **`ISHLATISH_START.bat`** — Yangi kompyuterda dasturni 1 marta bosish bilan ishga tushirish tugmasi.
-- ⚙️ **`SOZLASH_VA_O'RNATISH.bat`** — Yangi kompyuterda dasturni ilk bor tayyorlash va bazani tiklash tugmasi.
-- 💾 **`BAZANI_BACKUP_QILISH.bat`** — Istalgan vaqtda bazani JSON zaxiraga oluvchi tugma.
-- 📥 **`BAZANI_TIKLASH.bat`** — Zaxiradagi ma'lumotlarni bazaga qayta yuklovchi tugma.
-- 🔑 **`.env`** — Ma'lumotlar bazasi ulanish kalitlari.
-- 📁 **`src/`**, **`prisma/`**, **`scripts/`**, **`package.json`** — Dasturning to'liq manba kodlari.
+Internet faqat o'rnatish kuni kerak (Node.js, PostgreSQL va kutubxonalarni yuklash uchun).
 
 ---
 
-## 💻 2. Tizim egasining kompyuterida ishga tushirish tartibi:
+## 1. O'z kompyuteringizda: eng yangi ma'lumotni olish
 
-Loyiha egasi o'z kompyuterida dasturni ishlatishi uchun **atigi 3 ta oddiy qadam** bajariladi:
+Papkadagi `database_backup.json` eski bo'lishi mumkin. Ko'chirishdan oldin uni yangilang:
 
-### 1-qadam: Node.js ni o'rnatish (agar o'rnatilmagan bo'lsa)
-Kompyuterda Node.js dasturi bo'lishi kerak. 
-* Yuklab olish havolasi: [https://nodejs.org](https://nodejs.org) (LTS versiyasini yuklab o'rnatish kifoya).
+1. `BAZANI_BACKUP_QILISH.bat` ni bosing. U bulutdagi bazadan hamma ma'lumotni `database_backup.json` ga yozadi.
+2. Shu daqiqadan boshlab saytga (Vercel) yangi ma'lumot kiritilmasin — aks holda u lokal bazaga o'tmay qoladi.
 
-### 2-qadam: Dasturni o'rnatish (Birinchi marta)
-Fleshkadagi `CRM` papkasini kompyuterga ko'chirib o'tkazgach, papka ichidagi:
-👉 **`SOZLASH_VA_O'RNATISH.bat`** faylini sichqoncha bilan 2 marta bosing.
-* U avtomatik ravishda kutubxonalarni o'rnatadi va bazadagi barcha ma'lumotlarni tiklaydi.
+## 2. Fleshkaga ko'chirish
 
-### 3-qadam: Dasturni ishlatish
-Har safar CRM dasturini ochish uchun:
-👉 **`ISHLATISH_START.bat`** faylini bosing.
-* Dastur avtomatik ravishda brauzerda (`http://localhost:3000`) ochiladi.
+Butun `CRM` papkasini ko'chiring. Quyidagi ikki papkani tashlab ketish mumkin (ular katta va yangi kompyuterda o'zi qayta yaratiladi):
 
----
+- `node_modules`
+- `.next`
 
-## 📊 3. Zaxiralangan ma'lumotlar hajmi:
-Quyidagi barcha ma'lumotlar `database_backup.json` fayliga to'liq saqlandi:
-- 👥 **Mijozlar**: 55 ta
-- 🛒 **Savdolar**: 395 ta
-- 💳 **Mijozlar to'lovlari**: 178 ta
-- ↩️ **Vozvratlar**: 21 ta
-- 🏭 **Ishlab chiqarish partiyalari**: 125 ta (125 xil mahsulot)
-- 🚛 **Ta'minotchilar va Seryo kirimlari**: 7 ta ta'minotchi, 45 ta seryo kirimi, 30 ta to'lov
-- 💸 **Xarajatlar**: 46 ta
-- 📋 **Audit jurnali (Tarix)**: 900 ta yozuv
+## 3. Mijoz kompyuterida: bir martalik o'rnatish
 
----
+1. **Node.js** ni o'rnating: <https://nodejs.org> (LTS versiya).
+2. **PostgreSQL** ni o'rnating: <https://www.postgresql.org/download/windows/>
+   - O'rnatish paytida `postgres` foydalanuvchisi uchun parol so'raladi. Faqat harf va raqamdan iborat parol qo'ying va yozib oling.
+   - Port so'ralganda `5432` ni o'zgartirmang.
+3. `CRM` papkasini fleshkadan kompyuterga ko'chiring (masalan `C:\CRM`).
+4. `SOZLASH_VA_O'RNATISH.bat` ni bosing va PostgreSQL parolini kiriting. U:
+   - dasturni lokal bazaga ulaydi (eski bulut sozlamasi `.env.bulut.bak` da saqlanadi),
+   - bazani yaratadi va `database_backup.json` dagi ma'lumotni tiklaydi,
+   - direktor loginini yaratadi (`admin` / `korzinka77`),
+   - dasturni tayyorlaydi (build).
+5. `TARMOQQA_OCHISH.bat` ni **o'ng tugma → "Administrator sifatida ishga tushirish"** bilan bosing. U:
+   - telefonlar ulana olishi uchun Windows Firewall da 3000-portni ochadi,
+   - kompyuter yoqilganda dastur o'zi ishga tushadigan qiladi,
+   - har kuni soat 19:00 da avtomatik zaxira nusxa olishni sozlaydi.
 
-## 🔒 Xavfsizlik va topshirish
-Ushbu zaxira va loyiha kodi to'liq loyiha egasiga topshirilishi uchun tayyor. Fleshkaga ko me'yorda nusxalanib topshirilishi mumkin.
+## 4. Har kungi ishlatish
+
+- **Server kompyuterda:** `ISHLATISH_START.bat` ni bosing (yoki kompyuter yoqilganda o'zi ishga tushadi). Ochilgan qora oynani yopmang — yopilsa dastur to'xtaydi.
+- **Shu kompyuterda:** brauzerda `http://localhost:3000`.
+- **Telefon va boshqa kompyuterlarda:** shu Wi‑Fi ga ulanib, qora oynada ko'rsatilgan manzilni oching (masalan `http://192.168.1.10:3000`).
+
+### Telefonlar ulana olmasa
+
+- Telefon va server kompyuter bitta Wi‑Fi da ekanini tekshiring.
+- Windows da Wi‑Fi tarmog'i "Private (Xususiy)" deb belgilangan bo'lishi kerak.
+- Server kompyuterning manzili o'zgarib qolgan bo'lishi mumkin. Routerda shu kompyuterga doimiy IP manzil biriktirib qo'ying.
+
+## 5. Zaxira nusxa
+
+Endi ma'lumot faqat shu kompyuterda turadi. Disk buzilsa va zaxira bo'lmasa, hammasi yo'qoladi.
+
+- Zaxira har safar dastur ishga tushganda va har kuni 19:00 da avtomatik olinadi.
+- Nusxalar `backups` papkasida sana bilan saqlanadi (oxirgi 30 kun).
+- **`backups` papkasini kamida haftada bir marta fleshkaga yoki boshqa diskka ko'chirib turing.**
+- Qo'lda zaxira olish: `BAZANI_BACKUP_QILISH.bat`.
+- Zaxiradan tiklash: kerakli faylni `database_backup.json` nomi bilan `CRM` papkasiga qo'yib, `BAZANI_TIKLASH.bat` ni bosing. Tiklash faqat bo'sh bazaga to'g'ri ishlaydi; ichida ma'lumot bor bazaga tiklansa yozuvlar aralashib ketadi.
+
+## 6. Dastur yangilanganda
+
+Yangi kodni `CRM` papkasiga ko'chirgach, `.next` papkasini o'chirib, `ISHLATISH_START.bat` ni bosing — dastur o'zi qayta tayyorlanadi. `.env` va `backups` ga tegmang.

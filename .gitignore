@@ -16,3 +16,7 @@ yarn-error.log*
 *.local
 prisma/dev.db
 prisma/dev.db-journal
+
+backups/
+.env.bulut.bak
+tsconfig.tsbuildinfo

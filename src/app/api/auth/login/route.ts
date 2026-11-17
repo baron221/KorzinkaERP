@@ -27,6 +27,9 @@ export async function POST(req: NextRequest) {
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
     const session = await encrypt({ id: user.id, username: user.username, role: user.role });
 
+    const forwardedProto = req.headers.get("x-forwarded-proto")?.split(",")[0].trim();
+    const isHttps = (forwardedProto ?? req.nextUrl.protocol.replace(":", "")) === "https";
+
     const response = NextResponse.json({ success: true, role: user.role }, { status: 200 });
 
     // Set HTTP-only cookie
@@ -34,10 +37,12 @@ export async function POST(req: NextRequest) {
       name: "session",
       value: session,
       httpOnly: true,
-      secure: true, // Must be true inside Telegram Mini Apps/iFrames
+      // HTTPS (Vercel, Telegram Mini App): Secure + SameSite=None kerak.
+      // Lokal tarmoqda (http://192.168.x.x) Secure cookie brauzer tomonidan rad etiladi.
+      secure: isHttps,
       expires: expires,
       path: "/",
-      sameSite: "none", // Must be "none" for cross-context Mini App embeds
+      sameSite: isHttps ? "none" : "lax",
     });
 
     return response;
